@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'claveunica_auth',
 ]
 
 MIDDLEWARE = [
@@ -120,3 +121,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CLAVE_UNICA = {
+    'CLIENT_ID' : 'tu_client_id',
+    'CLIENT_SECRET': 'tu_client_secret',
+    'REDIRECT_URI': 'http://localhost:8000/claveunica/callback',
+}
