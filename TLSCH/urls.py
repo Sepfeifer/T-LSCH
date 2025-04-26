@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from core import views
 
 urlpatterns = [
+    path('', views.home_visita, name='home_visita'),
+    path('home_visita', views.home_visita, name='home_visita'),
     path('admin/', admin.site.urls),
-     path('claveunica/', include('claveunica_auth.urls')),
+    path('claveunica/', include('claveunica_auth.urls')),
+    path('listar', views.listar, name="listar"),
+    path('agregar', views.agregar, name="agregar"),
+    path('actualizar', views.actualizar, name="actualizar"),
+    path('eliminar', views.eliminar, name="eliminar")
 ]
+
