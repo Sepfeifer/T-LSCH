@@ -1,9 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import user_passes_test, login_required
+from .models import Video
+from .forms import VideoForm
 from .models import Usuario
 
 
@@ -65,6 +67,9 @@ def actualizar(request):
         datos = {'usuarios' : users}
         return render(request, "admin_usuario/actualizar.html", datos)
 
+
+#VIDEOS
+
 def eliminar(request):
     if request.method== 'POST':
         if request.POST.get('id_rut'):
@@ -75,4 +80,36 @@ def eliminar(request):
     else:
         users = Usuario.objects.all()
         datos = {'usuarios' : users}
-        return render(request, "admin_usuario/eliminar.html", datos)
+        return render(request, "admin/eliminar.html", datos)
+    
+def agregar_video(request):
+    if request.method == 'POST':
+        form = VideoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('listar_videos')
+    else:
+        form = VideoForm()
+    return render(request, 'Admin/agregar_video.html', {'form': form})
+
+
+def listar_videos(request):
+    videos = Video.objects.all()
+    return render(request, 'Admin/listar_video.html', {'videos': videos})
+
+def editar_video(request, video_id):
+    video = get_object_or_404(Video, id=video_id)
+    if request.method == 'POST':
+        form = VideoForm(request.POST, instance=video)
+        if form.is_valid():
+            form.save()
+            return redirect('listar_videos')
+    else:
+        form = VideoForm(instance=video)
+    
+    return render(request, 'Admin/editar_video.html', {'form': form})
+
+def eliminar_video(request, video_id):
+    video = get_object_or_404(Video, id=video_id)
+    video.delete()
+    return redirect('listar_videos')

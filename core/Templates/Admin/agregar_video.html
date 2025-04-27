@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="right_col" role="main">
+
+    <h1>Agregar Video</h1>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form action="{% url 'agregar_video' %}" method="POST">
+      {% csrf_token %}
+
+      <div class="form-group row">
+          <label for="nombre" class="col-4 col-form-label">Nombre del Video</label> 
+          <div class="col-8">
+              <div class="input-group">
+                  <div class="input-group-prepend">
+                      <div class="input-group-text"><i class="fa fa-video-camera"></i></div>
+                  </div> 
+                  <input id="nombre" name="nombre" type="text" class="form-control" required>
+              </div>
+          </div>
+      </div>
+
+      <div class="form-group row">
+          <label for="tema" class="col-4 col-form-label">Tema</label> 
+          <div class="col-8">
+              <div class="input-group">
+                  <div class="input-group-prepend">
+                      <div class="input-group-text"><i class="fa fa-book"></i></div>
+                  </div> 
+                  <input id="tema" name="tema" type="text" class="form-control" required>
+              </div>
+          </div>
+      </div>
+
+      <div class="form-group row">
+          <label for="url_codigo" class="col-4 col-form-label">Código del Video (URL)</label> 
+          <div class="col-8">
+              <div class="input-group">
+                  <div class="input-group-prepend">
+                      <div class="input-group-text"><i class="fa fa-link"></i></div>
+                  </div> 
+                  <input id="url_codigo" name="url_codigo" type="text" class="form-control" required>
+              </div>
+          </div>
+      </div>
+
+      <div class="form-group row">
+          <div class="offset-4 col-8">
+              <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-save"></i> Guardar Video
+              </button>
+          </div>
+      </div>
+
+    </form>
+
+</div>
+{% endblock %}
