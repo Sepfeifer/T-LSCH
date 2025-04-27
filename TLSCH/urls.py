@@ -26,6 +26,10 @@ urlpatterns = [
     path('listar', views.listar, name="listar"),
     path('agregar', views.agregar, name="agregar"),
     path('actualizar', views.actualizar, name="actualizar"),
-    path('eliminar', views.eliminar, name="eliminar")
+    path('eliminar', views.eliminar, name="eliminar"),
+    path('agregar_video', views.agregar_video, name='agregar_video'),
+    path('listar_video', views.listar_videos, name='listar_videos'),
+    path('editar_video/<int:video_id>/', views.editar_video, name='editar_video'),
+    path('eliminar_video/<int:video_id>/', views.eliminar_video, name='eliminar_video'),
 ]
 
