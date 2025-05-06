@@ -1,0 +1,108 @@
+{% extends '../base.html' %}
+
+{% block content %}
+<div class="right_col" role="main">
+    <h1>Actualizar Usuario</h1>
+    
+    <!-- Selector de usuario -->
+    <div class="form-group row mb-4">
+        <label class="col-4 col-form-label">Buscar Usuario:</label>
+        <div class="col-8">
+            <select id="selector-usuario" class="form-control">
+                <option value="">-- Seleccione un usuario --</option>
+                {% for u in usuarios %}
+                <option value="{{u.id_rut}}" 
+                    {% if usuario and u.id_rut == usuario.id_rut %}selected{% endif %}>
+                    {{u.id_rut}} - {{u.nombre}} {{u.apellido}}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Formulario de actualización (aparece al seleccionar) -->
+    {% if usuario %}
+    <form method="POST" action="{% url 'actualizar_usuario' %}">
+        {% csrf_token %}
+        <input type="hidden" name="id_rut" value="{{usuario.id_rut}}">
+
+        <!-- Campo Nombre -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Nombre:</label>
+            <div class="col-8">
+                <input name="nombre" value="{{usuario.nombre}}" class="form-control" required>
+            </div>
+        </div>
+
+        <!-- Campo Segundo Nombre -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Segundo Nombre:</label>
+            <div class="col-8">
+                <input name="seg_nombre" value="{{usuario.seg_nombre|default_if_none:''}}" class="form-control">
+            </div>
+        </div>
+
+        <!-- Campo Apellido Paterno -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Apellido Paterno:</label>
+            <div class="col-8">
+                <input name="apellido" value="{{usuario.apellido}}" class="form-control" required>
+            </div>
+        </div>
+
+        <!-- Campo Apellido Materno -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Apellido Materno:</label>
+            <div class="col-8">
+                <input name="apellido_m" value="{{usuario.apellido_m|default_if_none:''}}" class="form-control">
+            </div>
+        </div>
+
+        <!-- Campo Correo -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Correo:</label>
+            <div class="col-8">
+                <input type="email" name="correo" value="{{usuario.correo}}" class="form-control" required>
+            </div>
+        </div>
+
+        <!-- Campo Rol -->
+        <div class="form-group row">
+            <label class="col-4 col-form-label">Rol:</label>
+            <div class="col-8">
+                <select name="rol" class="form-control" required>
+                    <option value="admin" {% if usuario.rol == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="funcionario" {% if usuario.rol == 'funcionario' %}selected{% endif %}>Funcionario</option>
+                </select>
+            </div>
+        </div>
+        <!-- Campo Contraseña -->
+        <div class="form-group row">
+          <label class="col-4 col-form-label">Nueva Contraseña:</label>
+          <div class="col-8">
+              <input type="password" name="clave" class="form-control" 
+                    placeholder="Dejar en blanco para no cambiar">
+          </div>
+        </div>
+
+        <!-- Botón de actualización -->
+        <div class="form-group row">
+            <div class="offset-4 col-8">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fa fa-refresh"></i> Actualizar Todos los Campos
+                </button>
+            </div>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+// JavaScript para cambiar de usuario
+document.getElementById('selector-usuario').addEventListener('change', function() {
+    if(this.value) {
+        window.location.href = '?rut=' + this.value;
+    }
+});
+</script>
+{% endblock %}

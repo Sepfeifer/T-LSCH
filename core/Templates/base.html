@@ -55,19 +55,19 @@
                   </li>
                   <li><a><i class="fa fa-user"></i> Usuarios <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
-                      <li><a href="listar"><i class="fa fa-users"></i>Listar</a></li>
-                      <li><a href="agregar"><i class="fa fa-plus"></i>Agregar</a></li>
-                      <li><a href="actualizar"><i class="fa fa-refresh"></i>Actualizar</a></li>
-                      <li><a href="eliminar"><i class="fa fa-trash"></i>Elimiar</a></li>
+                      <li><a href="{% url 'listar_usuarios' %}"><i class="fa fa-users"></i>Listar</a></li>
+                      <li><a href="{% url 'agregar_usuario' %}"><i class="fa fa-plus"></i>Agregar</a></li>
+                      <li><a href="{% url 'actualizar_usuario' %}"><i class="fa fa-refresh"></i>Actualizar</a></li>
+                      <li><a href="{% url 'eliminar_usuario' %}"><i class="fa fa-trash"></i>Eliminar</a></li>
                     </ul>
                   </li>
                 </ul>
                 <li><a><i class="fa fa-hand-paper-o"></i> Videos LSCH <span class="fa fa-chevron-down"></span></a>
                   <ul class="nav child_menu">
-                    <li><a href="listar"><i class="fa fa-users"></i>Listar</a></li>
-                    <li><a href="{% url 'agregar_video' %}"><i class="fa fa-plus"></i>Agregar</a></li>
-                    <li><a href="actualizar"><i class="fa fa-refresh"></i>Actualizar</a></li>
-                    <li><a href="eliminar"><i class="fa fa-trash"></i>Elimiar</a></li>
+                    <li><a href="{% url 'listar_videos' %}"><i class="fa fa-film"></i> Listar Videos</a></li>
+                    <li><a href="{% url 'agregar_video' %}"><i class="fa fa-plus"></i> Agregar Video</a></li>
+                    <li><a href="{% url 'editar_video' 0 %}"><i class="fa fa-edit"></i> Editar Video</a></li>
+                    <li><a href="{% url 'eliminar_video' 0 %}"><i class="fa fa-trash"></i> Eliminar Video</a></li>
                   </ul>
                 </li>
               </div>
