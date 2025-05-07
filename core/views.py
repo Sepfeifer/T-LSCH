@@ -8,9 +8,15 @@ from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
 from .models import Usuario, Video
 from .forms import VideoForm
+from django.shortcuts import render
 
 def home_visita(request):
     return render(request, "home_visita.html")
+
+#ADMIN_VISTA    
+def vista_admin(request):
+    
+    return render(request, 'vista_admin.html')
 
 # USUARIOS
 def listar(request):
