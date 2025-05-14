@@ -2,13 +2,55 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
 from .models import Usuario, Video
 from .forms import VideoForm
 from django.shortcuts import render
+from django.contrib.auth.hashers import make_password
+
+
+#Login
+def login_view(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser or request.user.es_administrador:
+            return redirect('vista_admin')
+        elif request.user.es_funcionario:
+            return redirect('vista_funcionario')
+        return redirect('home_visita')
+    
+    if request.method == 'POST':
+        run = request.POST.get('run')
+        password = request.POST.get('password')
+        user = authenticate(request, username=run, password=password)
+        
+        if user is not None:
+            login(request, user)
+            if user.is_superuser or user.es_administrador:
+                return redirect('vista_admin')
+            elif user.es_funcionario:
+                return redirect('vista_funcionario')
+            return redirect('home_visita')
+        else:
+            return render(request, 'login/login.html', {
+                'error': 'RUN o contraseña incorrectos',
+                'run': run
+            })
+    
+    return render(request, 'login/login.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+@login_required
+def vista_funcionario(request):
+    if not request.user.es_funcionario and not request.user.is_superuser:
+        return redirect('login')
+    return render(request, 'vista_funcionario.html')
 
 def home_visita(request):
     return render(request, "home_visita.html")
@@ -80,37 +122,44 @@ def agregar(request):
             print("Campos recibidos:", {campo: request.POST.get(campo) for campo in campos})  # Debug 12
             return render(request, "admin_usuario/agregar.html", {'error': 'Todos los campos son obligatorios.'})
     
-    return render(request, "admin_usuario/agregar.html")
+    return render(request, "admin_usuario/agregar.html") 
 
 def actualizar(request):
+    # Obtener el modelo de usuario personalizado
+    Usuario = get_user_model()
+    
     usuario = None
     rut_seleccionado = request.GET.get('rut') or request.POST.get('id_rut')
     
     if rut_seleccionado:
         try:
+            # Usar directamente el modelo personalizado
             usuario = Usuario.objects.get(id_rut=rut_seleccionado)
         except Usuario.DoesNotExist:
             messages.error(request, "Usuario no encontrado")
+            return redirect('actualizar_usuario')
 
     if request.method == 'POST' and usuario:
-        # Actualización de campos
-        usuario.nombre = request.POST.get('nombre')
-        usuario.seg_nombre = request.POST.get('seg_nombre')
-        usuario.apellido = request.POST.get('apellido')
-        usuario.apellido_m = request.POST.get('apellido_m')
-        usuario.correo = request.POST.get('correo')
-        usuario.rol = request.POST.get('rol')
-        
-        # Actualizar contraseña solo si se proporcionó
-        nueva_clave = request.POST.get('clave')
-        if nueva_clave:
-            user_django = User.objects.get(username=usuario.id_rut)
-            user_django.set_password(nueva_clave)
-            user_django.save()
-        
-        usuario.save()
-        messages.success(request, "¡Usuario actualizado correctamente!")
-        return redirect('listar_usuarios')
+        try:
+            # Actualización de campos básicos
+            usuario.nombre = request.POST.get('nombre')
+            usuario.seg_nombre = request.POST.get('seg_nombre', '')
+            usuario.apellido = request.POST.get('apellido')
+            usuario.apellido_m = request.POST.get('apellido_m', '')
+            usuario.correo = request.POST.get('correo')
+            usuario.rol = request.POST.get('rol')
+            
+            # Actualizar contraseña si se proporcionó
+            nueva_clave = request.POST.get('clave')
+            if nueva_clave:
+                usuario.set_password(nueva_clave)
+            
+            usuario.save()
+            messages.success(request, "¡Usuario actualizado correctamente!")
+            return redirect('listar_usuarios')
+            
+        except Exception as e:
+            messages.error(request, f"Error al actualizar usuario: {str(e)}")
 
     return render(request, "admin_usuario/actualizar.html", {
         'usuarios': Usuario.objects.all(),
@@ -118,6 +167,8 @@ def actualizar(request):
     })
 
 def eliminar(request):
+    Usuario = get_user_model()  # Obtenemos el modelo personalizado
+    
     usuario = None
     rut_seleccionado = request.GET.get('rut') or request.POST.get('id_rut')
     
@@ -126,16 +177,18 @@ def eliminar(request):
             usuario = Usuario.objects.get(id_rut=rut_seleccionado)
         except Usuario.DoesNotExist:
             messages.error(request, "Usuario no encontrado")
+            return redirect('eliminar_usuario')
 
     if request.method == 'POST' and usuario:
         try:
-            # Eliminar también el usuario de autenticación de Django
-            User.objects.filter(username=usuario.id_rut).delete()
+            # Eliminar el usuario (ya no necesitamos eliminar de User)
+            nombre_usuario = usuario.get_full_name()
             usuario.delete()
-            messages.success(request, f"Usuario {usuario.nombre} eliminado correctamente")
+            messages.success(request, f"Usuario {nombre_usuario} eliminado correctamente")
             return redirect('listar_usuarios')
         except Exception as e:
             messages.error(request, f"Error al eliminar: {str(e)}")
+            return redirect('eliminar_usuario')
 
     return render(request, "admin_usuario/eliminar.html", {
         'usuarios': Usuario.objects.all(),

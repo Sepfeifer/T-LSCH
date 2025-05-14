@@ -17,15 +17,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core import views
-from core.views import vista_admin
+from core.views import vista_admin, login_view, vista_funcionario
 
 urlpatterns = [
+    path('', login_view, name='login'),  # Ahora el login es la página principal
+    path('login/', login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('', views.home_visita, name='home_visita'),
     path('home_visita', views.home_visita, name='home_visita'),
     path('claveunica/', include('claveunica_auth.urls')),
 
     #Vista de usuarios
       path('vista_admin/', vista_admin, name='vista_admin'),
+      path('funcionario/', vista_funcionario, name='vista_funcionario'),
+
     
     # Gestión de usuarios
     path('gestion/usuarios/', views.listar, name="listar_usuarios"),

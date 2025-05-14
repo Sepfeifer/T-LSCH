@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="funcionario-container">
+    <div class="funcionario-header">
+        <h1>Bienvenido/a, {{ user.nombre }} {{ user.apellido }}</h1>
+        <p>Rol: Funcionario</p>
+    </div>
+    
+    <div class="funcionario-actions">
+        <a href="{% url 'listar_videos' %}" class="action-card">
+            <div class="action-icon">
+                <i class="fa fa-video-camera"></i>
+            </div>
+            <div class="action-title">Ver Videos</div>
+        </a>
+        
+        <a href="#" class="action-card">
+            <div class="action-icon">
+                <i class="fa fa-file-text"></i>
+            </div>
+            <div class="action-title">Documentación</div>
+        </a>
+        
+        <a href="{% url 'logout' %}" class="action-card">
+            <div class="action-icon">
+                <i class="fa fa-sign-out"></i>
+            </div>
+            <div class="action-title">Cerrar Sesión</div>
+        </a>
+    </div>
+</div>
+{% endblock %}

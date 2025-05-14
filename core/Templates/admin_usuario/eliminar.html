@@ -9,18 +9,24 @@
 <div class="right_col" role="main">
   <h1>Eliminar Usuario</h1>
 
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
   <!-- Selector de usuario -->
   <div class="form-group row mb-4">
     <label class="col-4 col-form-label">Seleccionar Usuario:</label>
     <div class="col-8">
       <select id="selector-usuario" class="custom-select">
-        <option value="">-- Seleccione --</option>
+        <option value="">-- Seleccione un usuario --</option>
         {% for u in usuarios %}
-          <option
-            value="{{ u.id_rut }}"
-            {% if usuario and u.id_rut == usuario.id_rut %}selected{% endif %}
-          >
-            {{ u.id_rut }} – {{ u.nombre }} {{ u.apellido }}
+          <option value="{{ u.id_rut }}" 
+            {% if usuario and u.id_rut == usuario.id_rut %}selected{% endif %}>
+            {{ u.id_rut }} – {{ u.get_full_name }}
           </option>
         {% endfor %}
       </select>
@@ -29,36 +35,42 @@
 
   {% if usuario %}
     <div class="alert alert-danger">
-      <h4><i class="fa fa-exclamation-triangle"></i> ¿Está seguro?</h4>
-      <p>Está a punto de eliminar permanentemente al usuario:</p>
-      <ul>
-        <li><strong>RUT:</strong> {{ usuario.id_rut }}</li>
-        <li><strong>Nombre:</strong> {{ usuario.nombre }} {{ usuario.apellido }}</li>
-        <li><strong>Rol:</strong> {{ usuario.rol }}</li>
-      </ul>
+      <h4><i class="fa fa-exclamation-triangle"></i> Confirmar Eliminación</h4>
+      <p>Está a punto de eliminar permanentemente al siguiente usuario:</p>
+      
+      <div class="user-details">
+        <p><strong>RUN:</strong> {{ usuario.id_rut }}</p>
+        <p><strong>Nombre:</strong> {{ usuario.get_full_name }}</p>
+        <p><strong>Rol:</strong> {{ usuario.get_rol_display }}</p>
+        <p><strong>Correo:</strong> {{ usuario.correo }}</p>
+      </div>
 
       <form method="POST" action="{% url 'eliminar_usuario' %}">
         {% csrf_token %}
         <input type="hidden" name="id_rut" value="{{ usuario.id_rut }}">
-
-        <button type="submit" class="btn btn-delete">
-          <i class="fa fa-trash"></i> Confirmar Eliminación
-        </button>
-        <a href="?" class="btn btn-edit ml-2">
-          <i class="fa fa-times"></i> Cancelar
-        </a>
+        
+        <div class="form-group row mt-4">
+          <div class="offset-4 col-8">
+            <button type="submit" class="btn btn-danger">
+              <i class="fa fa-trash"></i> Confirmar Eliminación
+            </button>
+            <a href="{% url 'listar_usuarios' %}" class="btn btn-secondary ml-2">
+              <i class="fa fa-times"></i> Cancelar
+            </a>
+          </div>
+        </div>
       </form>
     </div>
   {% endif %}
 </div>
 
 <script>
-  document
-    .getElementById('selector-usuario')
-    .addEventListener('change', function() {
-      if (this.value) {
-        window.location.href = '?rut=' + this.value;
-      }
-    });
+  document.getElementById('selector-usuario').addEventListener('change', function() {
+    if (this.value) {
+      window.location.href = '?rut=' + this.value;
+    } else {
+      window.location.href = '{% url "eliminar_usuario" %}';
+    }
+  });
 </script>
 {% endblock %}

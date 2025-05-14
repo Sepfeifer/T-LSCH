@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link href="{% static 'css/login.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-header">
+        <img src="{% static 'img/logochile.png' %}" alt="Gobierno de Chile" class="logo-gobierno">
+        <h1>Sistema de Gestión T-LSCH</h1>
+        <p class="institucion">Ministerio de Desarrollo Social</p>
+    </div>
+    
+    <div class="login-box">
+        <div class="login-form-container">
+            <h2>Iniciar Sesión</h2>
+            
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            
+            <form method="post" class="login-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="run">RUN (sin puntos ni guión)</label>
+                    <input type="text" id="run" name="run" class="form-control" 
+                           value="{{ run|default:'' }}" required 
+                           placeholder="12345678">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" 
+                           class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn-login">Ingresar</button>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="login-footer">
+        <div class="footer-content">
+            <img src="{% static 'img/escudo.png' %}" alt="Escudo de Chile" class="escudo">
+            <p>Gobierno de Chile - Ministerio de Desarrollo Social</p>
+            <p>Todos los derechos reservados © 2023</p>
+        </div>
+    </footer>
+</div>
+{% endblock %}
