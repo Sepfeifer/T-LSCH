@@ -188,3 +188,46 @@
 .right_col .btn-primary .fa {
   color: #ffffff;
 }
+/* Botón hamburguesa */
+.sidebar-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 1001;
+  color: #5a6b7c;
+}
+
+/* Sidebar oculto por defecto */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  height: 100%;
+  width: 250px;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  padding-top: 60px;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+/* Enlaces del sidebar */
+.sidebar a {
+  display: block;
+  padding: 15px 25px;
+  color: #5a6b7c;
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sidebar a:hover {
+  background-color: #f7f9fc;
+}
+
+/* Sidebar visible */
+.sidebar.open {
+  left: 0;
+}
