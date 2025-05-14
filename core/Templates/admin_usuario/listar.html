@@ -1,46 +1,59 @@
 {% extends '../base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link href="{% static 'css/lista.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<div class="right_col" role="main">
+  <div class="right_col" role="main">
     <h1>Lista de usuarios</h1>
     
     <!-- Botón para agregar nuevo usuario -->
-    <a href="{% url 'agregar_usuario' %}" class="btn btn-success mb-3">
-        <i class="fa fa-plus"></i> Agregar Usuario
+    <a href="{% url 'agregar_usuario' %}" class="btn btn-add mb-3">
+      <i class="fa fa-plus"></i> Agregar Usuario
     </a>
 
-    <table class="table">
-        <thead>
-          <tr>
-            <th>Rut</th>
-            <th>Nombres</th>
-            <th>Apellidos</th>
-            <th>Correo</th>
-            <th>Rol</th>
-            <th>Fecha registro</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-            {% for u in usuarios %}
-          <tr>
-            <td>{{ u.id_rut }}</td>
-            <td>{{ u.nombre }}</td>
-            <td>{{ u.apellido }}</td>
-            <td>{{ u.correo }}</td>
-            <td>{{ u.rol }}</td>
-            <td>{{ u.f_registro }}</td>
-            <td>
-                <a href="{% url 'actualizar_usuario' %}" class="btn btn-warning btn-sm">
-                    <i class="fa fa-edit"></i>
-                </a>
-                <a href="{% url 'eliminar_usuario' %}" class="btn btn-danger btn-sm">
-                    <i class="fa fa-trash"></i>
-                </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Rut</th>
+          <th>Nombres</th>
+          <th>Apellidos</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Fecha registro</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td>{{ u.id_rut }}</td>
+          <td>{{ u.nombre }}</td>
+          <td>{{ u.apellido }}</td>
+          <td>{{ u.correo }}</td>
+          <td>{{ u.rol }}</td>
+          <td>{{ u.f_registro }}</td>
+         <td>
+          <!-- abrimos /actualizar/?rut=<valor> -->
+          <a
+            href="{% url 'actualizar_usuario' %}?rut={{ u.id_rut }}"
+            class="btn btn-edit btn-sm"
+          >
+            <i class="fa fa-edit"></i>
+          </a>
+          <!-- abrimos /eliminar/?rut=<valor> -->
+          <a
+            href="{% url 'eliminar_usuario' %}?rut={{ u.id_rut }}"
+            class="btn btn-delete btn-sm"
+          >
+            <i class="fa fa-trash"></i>
+          </a>
+        </td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-</div>
+  </div>
 {% endblock %}

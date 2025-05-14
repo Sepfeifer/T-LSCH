@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+  <link href="{% static 'css/lista_video.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
 <div class="right_col" role="main">
@@ -7,8 +12,12 @@
     <form method="post">
       {% csrf_token %}
       {{ form.as_p }}
-      <button type="submit" class="btn btn-success">Guardar cambios</button>
-      <a href="{% url 'listar_videos' %}" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-success">
+        <i class="fa fa-save"></i> Guardar cambios
+      </button>
+      <a href="{% url 'listar_videos' %}" class="btn btn-secondary">
+        <i class="fa fa-times"></i> Cancelar
+      </a>
     </form>
   </div>
 </div>

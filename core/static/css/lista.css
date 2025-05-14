@@ -1,0 +1,190 @@
+/* lista.css */
+
+/* Tabla de usuarios */
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-family: 'Source Sans Pro', sans-serif;
+  margin-top: 20px;
+}
+
+/* Encabezados */
+.user-table thead th {
+  background-color: #e0f2fe;    /* celeste muy suave */
+  color: #1e3a8a;               /* azul oscuro para contraste */
+  font-weight: 600;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 2px solid #bae6fd;
+}
+
+/* Filas alternas */
+.user-table tbody tr:nth-child(odd) {
+  background: #f7fbfe;
+}
+.user-table tbody tr:hover {
+  background: #e0f7ff;
+}
+
+/* Celdas */
+.user-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+/* Botones comunes */
+.user-table .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+/* Quita subrayado y fuerza texto blanco en el link del botón Agregar */
+.btn-add {
+  background-color: #38bdf8; /* tu celeste */
+  color: #ffffff;            /* texto e iconos blancos */
+  text-decoration: none;     /* quita la línea */
+  display: inline-flex;       /* para alinear icono y texto */
+  align-items: center;
+  gap: 6px;                  /* espacio entre icono y texto */
+}
+
+/* Asegúrate de que el icono herede el color */
+.btn-add .fa {
+  color: #ffffff;
+}
+
+/* Hover: mantiene sin subrayado y ajusta un poco el celeste */
+.btn-add:hover {
+  background-color: #0cacf7;
+  text-decoration: none;
+}
+/* Botón Editar (celeste claro) */
+.btn-edit {
+  background-color: #7dd3fc;
+}
+.btn-edit:hover {
+  background-color: #38bdf8;
+}
+
+/* Botón Eliminar (rojo) */
+.btn-delete {
+  background-color: #f87171;
+}
+.btn-delete:hover {
+  background-color: #ef4444;
+}
+/* === Formulario “Agregar Usuario” === */
+
+/* Contenedor del form */
+.right_col form {
+  background: #ffffff;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Título centrado */
+.right_col h1 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 300;
+  color: #73879C;
+  margin-bottom: 30px;
+}
+
+/* Cada grupo de campo */
+.right_col .form-group {
+  display: flex;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+/* Label */
+.right_col .form-group label {
+  width: 30%;
+  font-weight: 600;
+  color: #5a6b7c;
+}
+
+/* Wrapper del input */
+.right_col .form-group .col-8 {
+  width: 70%;
+}
+
+/* Input group */
+.right_col .input-group {
+  display: flex;
+  width: 100%;
+}
+
+/* Icono previo */
+.right_col .input-group-prepend .input-group-text {
+  background-color: #e0f2fe;
+  border: 1px solid #bae6fd;
+  color: #1e3a8a;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Campos de texto */
+.right_col .form-control {
+  flex: 1;
+  border: 1px solid #e0e4e8;
+  border-radius: 0 4px 4px 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+/* Select */
+.right_col .custom-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0e4e8;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+/* Botón de envío */
+.right_col .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #38bdf8;
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  margin-left: 30%; /* alinea con el resto de inputs */
+}
+
+.right_col .btn-primary:hover {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+
+/* Icono dentro del botón */
+.right_col .btn-primary .fa {
+  color: #ffffff;
+}

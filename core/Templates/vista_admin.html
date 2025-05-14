@@ -1,50 +1,17 @@
+{# templates/vista_admin.html #}
 {% extends 'base.html' %}
 
 {% block title %}Admin{% endblock %}
-
-{% block extra_css %}
-<style>
-  .shortcut-cards {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 50px;
-  }
-  .shortcut-card {
-    width: 200px;
-    height: 200px;
-    margin: 0 20px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-align: center;
-    text-decoration: none;
-    color: inherit;
-    transition: box-shadow 0.3s;
-  }
-  .shortcut-card:hover {
-    box-shadow: 0 0 11px rgba(33,33,33,.2);
-  }
-  .shortcut-card .icon {
-    font-size: 4em;
-    margin-top: 30px;
-  }
-  .shortcut-card .label {
-    margin-top: 10px;
-    font-size: 1.2em;
-  }
-</style>
-{% endblock %}
 
 {% block content %}
   <h1>admin</h1>
 
   <div class="shortcut-cards">
-    <a href="{% url 'listar_usuarios' %}" target="_blank" class="shortcut-card">
+    <a href="{% url 'listar_usuarios' %}" class="shortcut-card">
       <div class="icon"><i class="fa fa-users"></i></div>
       <div class="label">Usuarios</div>
     </a>
-    <a href="{% url 'listar_videos' %}" target="_blank" class="shortcut-card">
+    <a href="{% url 'listar_videos' %}" class="shortcut-card">
       <div class="icon"><i class="fa fa-film"></i></div>
       <div class="label">Videos LSCH</div>
     </a>

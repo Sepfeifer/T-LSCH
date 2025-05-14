@@ -1,80 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/ico" />
+<head>
+  <!-- … tus meta tags … -->
+  <title>{% block title %}Admin{% endblock %}</title>
 
-    <title>{% block title %}Admin{% endblock %}</title>
+  {# 1. Incluimos Font Awesome desde CDN #}
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+  >
 
-    <!-- Bootstrap CSS -->
-    <link href="{% static 'FrWork/admin_lte/vendors/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <!-- AdminLTE Custom Theme Style -->
-    <link href="{% static 'FrWork/admin_lte/build/css/custom.min.css' %}" rel="stylesheet">
+  {# 2. Cargamos tu stylesheet #}
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
 
-    {% block extra_css %}{% endblock %}
-  </head>
-
-  <body class="nav-md">
-    <div class="container body">
-      <div class="main_container">
-        <div class="col-md-3 left_col">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0;">
-              <a class="site_title"> <span>Admin</span></a>
-            </div>
-            <div class="clearfix"></div>
-
-            <!-- sidebar menu -->
-            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
-              <div class="menu_section">
-                <h3>General</h3>
-                <ul class="nav side-menu">
-                  <li>
-                    <a><i class="fa fa-user"></i> Usuarios <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
-                      <li><a href="{% url 'listar_usuarios' %}"><i class="fa fa-users"></i> Listar</a></li>
-                      <li><a href="{% url 'agregar_usuario' %}"><i class="fa fa-plus"></i> Agregar</a></li>
-                      <li><a href="{% url 'actualizar_usuario' %}"><i class="fa fa-refresh"></i> Actualizar</a></li>
-                      <li><a href="{% url 'eliminar_usuario' %}"><i class="fa fa-trash"></i> Eliminar</a></li>
-                    </ul>
-                  </li>
-                  <li>
-                    <a><i class="fa fa-hand-paper-o"></i> Videos LSCH <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
-                      <li><a href="{% url 'listar_videos' %}"><i class="fa fa-film"></i> Listar Videos</a></li>
-                      <li><a href="{% url 'agregar_video' %}"><i class="fa fa-plus"></i> Agregar Video</a></li>
-                      <li><a href="{% url 'editar_video' 0 %}"><i class="fa fa-edit"></i> Editar Video</a></li>
-                      <li><a href="{% url 'eliminar_video' 0 %}"><i class="fa fa-trash"></i> Eliminar Video</a></li>
-                    </ul>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <!-- /sidebar menu -->
-          </div>
-        </div>
-
-        <!-- main content -->
-        <div class="right_col" role="main">
-          {% block content %}{% endblock %}
-        </div>
-        <!-- /main content -->
-
-      </div>
-    </div>
-
-    <!-- jQuery -->
-    <script src="{% static 'FrWork/admin_lte/vendors/jquery/dist/jquery.min.js' %}"></script>
-    <!-- Bootstrap JS -->
-    <script src="{% static 'FrWork/admin_lte/vendors/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
-    <!-- AdminLTE Custom Script -->
-    <script src="{% static 'FrWork/admin_lte/build/js/custom.min.js' %}"></script>
-
-    {% block extra_js %}{% endblock %}
-  </body>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+  {% block extra_js %}{% endblock %}
+</body>
 </html>

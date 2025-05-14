@@ -1,0 +1,65 @@
+/* style.css */
+
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700');
+
+/* Body y contenedor centrado */
+body {
+  margin: 0;
+  padding: 20px;
+  background-color: #f7f9fc;
+  font-family: 'Source Sans Pro', sans-serif;
+  color: #5a6b7c;
+}
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Título */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #73879C;
+  text-transform: capitalize;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+/* Grid de cards centrado */
+.shortcut-cards {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 60px;
+}
+
+/* Estilo de cada card */
+.shortcut-card {
+  width: 200px;
+  height: 200px;
+  background: #ffffff;
+  border: 1px solid #e0e4e8;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  transition: transform .2s, box-shadow .2s;
+}
+.shortcut-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* Icono y etiqueta */
+.shortcut-card .icon i {
+  font-size: 3rem;
+  color: #73879C;
+}
+.shortcut-card .label {
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
