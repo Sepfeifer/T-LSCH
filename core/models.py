@@ -59,7 +59,7 @@ class Usuario(AbstractUser):
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
-        db_table = 'usuario'
+        #db_table = 'usuario'    Esto causa problemas con mariaDB
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.id_rut})"

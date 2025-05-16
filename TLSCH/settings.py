@@ -33,7 +33,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    # 'django.contrib.admin',  # ← Comenta esta línea
+    'django.contrib.admin',  # ← Comenta esta línea
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -79,11 +79,14 @@ WSGI_APPLICATION = 'TLSCH.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'tlsch_db',
+        'USER': 'tlsch_user',
+        'PASSWORD': '1qa2ws3edTlsch',  # La misma que creaste arriba
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
-
 AUTH_USER_MODEL = 'core.Usuario'
 
 
