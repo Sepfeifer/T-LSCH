@@ -1,0 +1,15 @@
+<form method="post">
+  {% csrf_token %}
+  <textarea name="frase" rows="4" class="form-control mb-2"
+            placeholder="Escribe aquí…">{{ frase }}</textarea>
+  <button type="submit" class="btn btn-primary">Traducir</button>
+</form>
+
+{% if keywords %}
+  <h2 class="mt-4">Palabras clave extraídas</h2>
+  <ul>
+    {% for kw in keywords %}
+      <li>{{ kw }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}

@@ -1,7 +1,12 @@
 {# templates/vista_funcionario.html #}
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Funcionario{% endblock %}
+
+{% block extra_css %}
+  <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
   <!-- Botón hamburguesa -->
@@ -11,32 +16,36 @@
 
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
-    <a href="{% url 'vista_admin' %}">Menu Principal</a>
-    <a href="{% url 'listar_usuarios' %}">Crear nuev traduccion</a>
-    <a href="{% url 'listar_videos' %}">Crear nueva encuesta</a>
+    <a href="{% url 'vista_admin' %}">Menú Principal</a>
+    <a href="{% url 'listar_usuarios' %}">Traducir a LSCH</a>
+    <a href="{% url 'listar_videos' %}">Realizar encuesta</a>
     <a href="{% url 'logout' %}">Cerrar sesión</a>
   </div>
 
-  <!-- Contenido principal -->
-  <h1>admin</h1>
+  <div class="container" style="max-width:700px; margin-top:40px;">
+    <div class="greeting mb-4">
+      <h1>¡Hola, {{ request.user.get_full_name|default:request.user.username }}!</h1>
 
-  <div class="shortcut-cards">
-    <a href="{% url 'listar_usuarios' %}" class="shortcut-card">
-      <div class="icon"><i class="fa fa-users"></i></div>
-      <div class="label">Traducir a lengua de señas</div>
-    </a>
-    <a href="{% url 'listar_videos' %}" class="shortcut-card">
-      <div class="icon"><i class="fa fa-film"></i></div>
-      <div class="label">Realizar una encuesta</div>
-    </a>
+    </div>
+
+    {# Y tus shortcut-cards más abajo… #}
+    <div class="shortcut-cards" style="margin-top:50px;">
+      <a href="{% url 'traductor' %}" class="shortcut-card">
+        <div class="icon"><i class="fa fa-users"></i></div>
+        <div class="label">Traducir a LSCH</div>
+      </a>
+      <a href="{% url 'listar_videos' %}" class="shortcut-card">
+        <div class="icon"><i class="fa fa-film"></i></div>
+        <div class="label">Realizar encuesta</div>
+      </a>
+    </div>
   </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
   function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
+    document.getElementById('sidebar').classList.toggle('open');
   }
 </script>
 {% endblock %}

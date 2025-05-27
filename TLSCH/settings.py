@@ -12,6 +12,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import environ
+# Construye la ruta a la raíz del proyecto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Inicializa django-environ y carga el .env
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# Ahora sí puedes usar:
+HF_ACCESS_TOKEN = env("HF_ACCESS_TOKEN", default="")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -82,7 +92,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'tlsch_db',
         'USER': 'tlsch_user',
-        'PASSWORD': '1qa2ws3edTlsch',  # La misma que creaste arriba
+        'PASSWORD': '1',  # La misma que creaste arriba
         'HOST': 'localhost',
         'PORT': '3306',
     }

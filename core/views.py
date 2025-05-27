@@ -11,9 +11,9 @@ from .models import Usuario, Video
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
+from .services.spacy_translator import extract_keywords_spacy
 
-
-#Login
+#Login  
 def login_view(request):
     if request.user.is_authenticated:
         if request.user.is_superuser or request.user.es_administrador:
@@ -222,3 +222,20 @@ def eliminar_video(request, video_id):
     video = get_object_or_404(Video, id=video_id)
     video.delete()
     return redirect('listar_videos')
+
+def traductor(request):
+    frase = ""
+    resumen = ""
+    keywords = []
+
+    if request.method == "POST":
+        frase = request.POST.get("frase", "").strip()
+        if frase:
+            keywords = extract_keywords_spacy(frase)
+            resumen = ", ".join(keywords)
+
+    return render(request, "traductor.html", {
+        "frase": frase,
+        "resumen": resumen,
+        "keywords": keywords,
+    })

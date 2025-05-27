@@ -54,3 +54,31 @@
     font-size: 1.2rem;
     font-weight: 600;
 }
+/* static/css/funcionario.css */
+
+/* Nav tabs ligeras */
+.nav-tabs .nav-link {
+  color: #5a6b7c;
+  font-weight: 500;
+}
+.nav-tabs .nav-link.active {
+  color: #1e3a8a;
+  background-color: #e0f2fe;
+  border-color: #bae6fd #bae6fd #ffffff;
+}
+
+/* Lista de keywords */
+.keyword-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+}
+.keyword-list li {
+  background: #e0f2fe;
+  color: #1e3a8a;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+}
