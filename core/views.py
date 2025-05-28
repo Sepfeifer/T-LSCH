@@ -7,7 +7,7 @@ User = get_user_model()
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
-from .models import Usuario, Video
+from .models import Usuario, Video, Tema
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
@@ -198,13 +198,26 @@ def eliminar(request):
 # VIDEOS
 def agregar_video(request):
     if request.method == 'POST':
-        form = VideoForm(request.POST)
+        post_data = request.POST.copy()
+        temas_ingresados = post_data.getlist('temas')
+
+        # Crea o obtiene los temas escritos por el usuario
+        tema_objs = []
+        for t in temas_ingresados:
+            tema_obj, _ = Tema.objects.get_or_create(nombre=t.strip())
+            tema_objs.append(tema_obj)
+
+        # Crear el formulario sin asignar aún los temas
+        form = VideoForm(post_data)
         if form.is_valid():
-            form.save()
+            video = form.save(commit=False)
+            video.save()
+            video.temas.set(tema_objs)  # Asignar temas ManyToMany
             return redirect('listar_videos')
     else:
         form = VideoForm()
     return render(request, 'admin_usuario/agregar_video.html', {'form': form})
+
 
 def listar_videos(request):
     videos = Video.objects.all()
@@ -212,11 +225,18 @@ def listar_videos(request):
 
 def editar_video(request, video_id):
     video = get_object_or_404(Video, id=video_id)
-    form = VideoForm(request.POST or None, instance=video)
-    if form.is_valid():
-        form.save()
-        return redirect('listar_videos')
-    return render(request, 'admin_usuario/editar_video.html', {'form': form})
+
+    if request.method == 'POST':
+        form = VideoForm(request.POST, instance=video)
+        if form.is_valid():
+            video = form.save(commit=False)
+            video.save()
+            form.save_m2m()
+            return redirect('listar_videos')
+    else:
+        form = VideoForm(instance=video)
+
+    return render(request, 'admin_usuario/editar_video.html', {'form': form, 'video': video})
 
 def eliminar_video(request, video_id):
     video = get_object_or_404(Video, id=video_id)

@@ -21,7 +21,6 @@
           <th>Nombre</th>
           <th>Tema</th>
           <th>URL Código</th>
-          <th>Fecha de Creación</th>
           <th>Opciones</th>
         </tr>
       </thead>
@@ -29,7 +28,13 @@
         {% for video in videos %}
         <tr>
           <td>{{ video.nombre }}</td>
-          <td>{{ video.tema }}</td>
+         <td>
+            {% for tema in video.temas.all %}
+              {{ tema.nombre }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+              Sin temas
+            {% endfor %}
+          </td>
           <td>{{ video.url_codigo }}</td>
           <td>{{ video.fecha_creacion|date:"d-m-Y H:i" }}</td>
           <td>
