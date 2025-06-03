@@ -71,14 +71,25 @@ class Usuario(AbstractUser):
         return self.nombre
     
 class Tema(models.Model):
-        nombre = models.CharField(max_length=100, unique=True)
+    """
+    Representa un tema o palabra clave en LSCH (Lengua de Señas Chilena).
+    Por ejemplo: 'carnet_signo', 'rut_signo', 'acta_nacimiento_signo', etc.
+    """
+    nombre = models.CharField(max_length=100, unique=True)
 
-        def __str__(self):
-            return self.nombre
+    def __str__(self):
+        return self.nombre
+
 
 class Video(models.Model):
+    """
+    Modelo que almacena los videos asociados a uno o varios temas de LSCH.
+    - 'temas' es ManyToMany con Tema, de modo que un Video puede tener
+      varios tags (ej: ['carnet_signo', 'documento_signo']).
+    - 'url_codigo' apunta a la URL o ruta donde está guardado ese video (mp4).
+    """
     nombre = models.CharField(max_length=255)
-    temas = models.ManyToManyField(Tema, related_name='videos')  # nuevo campo
+    temas = models.ManyToManyField(Tema, related_name='videos')
     url_codigo = models.CharField(max_length=255)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

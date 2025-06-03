@@ -92,7 +92,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'tlsch_db',
         'USER': 'tlsch_user',
-        'PASSWORD': '1',  # La misma que creaste arriba
+        'PASSWORD': '1qa2ws3edTlsch',  # La misma que creaste arriba
         'HOST': 'localhost',
         'PORT': '3306',
     }

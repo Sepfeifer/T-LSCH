@@ -28,4 +28,9 @@ urlpatterns = [
     path('gestion/videos/agregar/', views.agregar_video, name="agregar_video"),
     path('gestion/videos/editar/<int:video_id>/', views.editar_video, name="editar_video"),
     path('gestion/videos/eliminar/<int:video_id>/', views.eliminar_video, name="eliminar_video"),
+
+    # Traductor 
+    path('funcionario/traductor/', traductor, name='traductor'),
+    path('traductor/', traductor, name='traductor_directo'),
+    
 ]

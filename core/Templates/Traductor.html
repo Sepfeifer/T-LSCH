@@ -1,15 +1,243 @@
-<form method="post">
-  {% csrf_token %}
-  <textarea name="frase" rows="4" class="form-control mb-2"
-            placeholder="Escribe aquí…">{{ frase }}</textarea>
-  <button type="submit" class="btn btn-primary">Traducir</button>
-</form>
+{# core/templates/traductor.html #}
+{% extends 'base.html' %}
+{% load static %}
 
-{% if keywords %}
-  <h2 class="mt-4">Palabras clave extraídas</h2>
-  <ul>
-    {% for kw in keywords %}
-      <li>{{ kw }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+{% block title %}Traductor LSCH{% endblock %}
+
+{% block extra_css %}
+  <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
+  <style>
+    .traductor-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .input-section {
+      margin-bottom: 20px;
+    }
+
+    /* === Recuperamos el estilo original del textarea y botón === */
+    .traductor-textarea {
+      width: 100%;
+      height: 150px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .traductor-button {
+      margin-top: 15px;
+      padding: 12px 25px;
+      background: #003366;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+      width: 100%;
+    }
+    .traductor-button:hover {
+      background: #002244;
+    }
+    /* === Fin del estilo original del textarea y botón === */
+
+    #playerHTML5, #playerYT {
+      width: 100%;
+      max-width: 800px;
+      height: 450px;
+      background: #000;
+      margin: 0 auto 20px auto;
+    }
+    #playerHTML5 {
+      display: none;
+    }
+    #playerYT {
+      display: none;
+    }
+
+    .btn-reiniciar {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #003366;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-reiniciar:hover {
+      background: #002244;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</div>
+  <div class="sidebar" id="sidebar">
+    <a href="{% url 'vista_admin' %}">Menú Principal</a>
+    <a href="{% url 'traductor' %}">Traducir a LSCH</a>
+    <a href="{% url 'listar_videos' %}">Realizar encuesta</a>
+    <a href="{% url 'logout' %}">Cerrar sesión</a>
+  </div>
+
+  <div class="traductor-container">
+    <h2 style="color: #003366; text-align: center; margin-bottom: 20px;">
+      Traductor a Lengua de Señas Chilena
+    </h2>
+
+    <!-- REPRODUCTOR HTML5 -->
+    <video id="playerHTML5" controls></video>
+    <!-- REPRODUCTOR YT -->
+    <div id="playerYT"></div>
+
+    <!-- BOTÓN PARA REINICIAR LA SECUENCIA -->
+    {% if playlist %}
+      <button id="btnReiniciar" class="btn-reiniciar">Reiniciar Secuencia</button>
+    {% endif %}
+
+    <!-- FORMULARIO DE ENTRADA -->
+    <div class="input-section">
+      <form method="post">
+        {% csrf_token %}
+        <textarea
+          name="frase"
+          class="traductor-textarea"
+          placeholder="Ingresa la frase a traducir..."
+        >{{ frase }}</textarea>
+        <button type="submit" class="traductor-button">
+          Generar Traducción
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista de palabras y títulos encontrados (opcional) -->
+    {% if matches %}
+      <div class="matches-section">
+        <h4>Palabras encontradas y títulos de video:</h4>
+        <ul>
+          {% for palabra, titulo in matches.items %}
+            <li>{{ palabra }} ➔ {{ titulo }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // --------------------------------------------
+    // 1) Convertir la playlist de Django en JS
+    // --------------------------------------------
+    const playlist = [
+      {% for item in playlist %}
+        {
+          url: "{{ item.url }}",
+          isYouTube: {{ item.is_youtube|yesno:"true,false" }}
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    let currentIndex = 0;
+    let ytPlayer = null;
+
+    // --------------------------------------------
+    // 2) Función para reproducir el siguiente video
+    // --------------------------------------------
+    function playNext() {
+      if (currentIndex >= playlist.length) {
+        // Fin de la secuencia
+        document.getElementById('playerHTML5').style.display = 'none';
+        document.getElementById('playerYT').style.display = 'none';
+        return;
+      }
+
+      const item = playlist[currentIndex];
+      if (item.isYouTube) {
+        // Mostrar y usar YouTube IFrame API
+        document.getElementById('playerHTML5').style.display = 'none';
+        document.getElementById('playerYT').style.display = 'block';
+
+        if (!ytPlayer) {
+          // Cargar la API de YouTube, luego inicializar
+          const tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          document.body.appendChild(tag);
+          window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('playerYT', {
+              height: '450',
+              width: '800',
+              videoId: item.url.split('/embed/')[1].split('?')[0],
+              playerVars: { 'autoplay': 1, 'controls': 1 },
+              events: {
+                'onStateChange': onPlayerStateChange
+              }
+            });
+          };
+        } else {
+          // Ya existe el player, solo cambiar videoId
+          const videoId = item.url.split('/embed/')[1].split('?')[0];
+          ytPlayer.loadVideoById(videoId);
+        }
+
+      } else {
+        // Mostrar y usar HTML5 <video>
+        if (ytPlayer) {
+          ytPlayer.stopVideo();
+        }
+        document.getElementById('playerYT').style.display = 'none';
+        const vid = document.getElementById('playerHTML5');
+        vid.src = item.url;
+        vid.style.display = 'block';
+        vid.play();
+      }
+
+      currentIndex++;
+    }
+
+    // --------------------------------------------
+    // 3) Evento para <video> HTML5 terminar
+    // --------------------------------------------
+    document.addEventListener('DOMContentLoaded', function() {
+      const vid = document.getElementById('playerHTML5');
+      vid.addEventListener('ended', function() {
+        playNext();
+      });
+
+      // Si inicio con playlist no vacía, arrancar secuencia
+      if (playlist.length > 0) {
+        playNext();
+      }
+
+      // Botón “Reiniciar Secuencia”
+      const btn = document.getElementById('btnReiniciar');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          currentIndex = 0;
+          playNext();
+        });
+      }
+    });
+
+    // --------------------------------------------
+    // 4) Función para detectar fin de video YouTube
+    // --------------------------------------------
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        playNext();
+      }
+    }
+  </script>
+{% endblock %}

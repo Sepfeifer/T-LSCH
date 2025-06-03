@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
@@ -11,7 +12,9 @@ from .models import Usuario, Video, Tema
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
-from .services.spacy_translator import extract_keywords_spacy
+from .services.spacy_translator import  translate_to_lsch
+from .services.spacy_extractor import extract_keywords_spacy
+from .services.synonym_service import get_synonyms
 
 #Login  
 def login_view(request):
@@ -243,19 +246,119 @@ def eliminar_video(request, video_id):
     video.delete()
     return redirect('listar_videos')
 
+
+
+
 def traductor(request):
+    """
+    Vista que recibe un texto (POST).
+    - Divide la frase en “tokens” normales, salvo que detecte un segmento entre comillas.
+      Si ve "palabra", toma cada letra de palabra como token individual.
+    - Para cada token en orden:
+        1) Busca Video.nombre__iexact o __icontains.
+        2) Si no encuentra, prueba sinónimos.
+    - Construye 'playlist' con { 'titulo', 'url', 'is_youtube' } en el orden.
+    """
     frase = ""
-    resumen = ""
-    keywords = []
+    playlist = []
+    matches = {}
 
     if request.method == "POST":
         frase = request.POST.get("frase", "").strip()
         if frase:
-            keywords = extract_keywords_spacy(frase)
-            resumen = ", ".join(keywords)
+            # 1) Compilar lista de tokens respetando comillas
+            tokens = []
+            # Patrón: grupo1 = texto dentro de comillas, grupo2 = cualquier secuencia no-espacio
+            for m in re.finditer(r'"([^"]+)"|(\S+)', frase):
+                if m.group(1) is not None:
+                    # Dentro de comillas: descomponer en caracteres individuales
+                    for ch in m.group(1):
+                        if ch.strip():  # omitir espacios dentro de la cadena
+                            tokens.append(ch.lower())
+                else:
+                    # Token normal (palabra fuera de comillas)
+                    tokens.append(m.group(2).lower())
+
+            # 2) Para cada token, buscar video en orden
+            for token in tokens:
+                # 2.1) Buscar por nombre exacto o parcial
+                video = Video.objects.filter(nombre__iexact=token).first()
+                if not video:
+                    video = Video.objects.filter(nombre__icontains=token).first()
+
+                # 2.2) Si no halló por nombre, buscar en sinónimos
+                if not video:
+                    for syn in get_synonyms(token):
+                        video = Video.objects.filter(nombre__icontains=syn).first()
+                        if video:
+                            break
+
+                # 2.3) Si encontró video, armar entrada de playlist
+                if video:
+                    url = video.url_codigo.strip()
+                    if "youtube.com" in url or "youtu.be" in url:
+                        # Extraer ID de YouTube
+                        video_id = None
+                        if "watch?v=" in url:
+                            after = url.split("watch?v=")[1]
+                            video_id = after.split("&")[0]
+                        elif "youtu.be/" in url:
+                            after = url.split("youtu.be/")[1]
+                            video_id = after.split("?")[0]
+                        if video_id:
+                            embed = f"https://www.youtube.com/embed/{video_id}?enablejsapi=1&autoplay=1"
+                        else:
+                            embed = url
+                        playlist.append({
+                            "titulo": video.nombre,
+                            "url": embed,
+                            "is_youtube": True,
+                        })
+                    else:
+                        playlist.append({
+                            "titulo": video.nombre,
+                            "url": video.url_codigo,
+                            "is_youtube": False,
+                        })
+
+                    # Guardar para mostrar lista de coincidencias
+                    matches[token] = video.nombre
 
     return render(request, "traductor.html", {
         "frase": frase,
-        "resumen": resumen,
-        "keywords": keywords,
+        "playlist": playlist,
+        "matches": matches,
     })
+
+
+def _videos_con_embed(qs):
+    """
+    Dado un QuerySet de Video, devuelve lista de dicts con:
+    { nombre, is_youtube, embed_url, url_original } para usar en template.
+    """
+    lista = []
+    for video in qs:
+        url = video.url_codigo.strip()
+        if "youtube.com" in url or "youtu.be" in url:
+            video_id = None
+            if "watch?v=" in url:
+                after = url.split("watch?v=")[1]
+                video_id = after.split("&")[0]
+            elif "youtu.be/" in url:
+                after = url.split("youtu.be/")[1]
+                video_id = after.split("?")[0]
+            embed = f"https://www.youtube.com/embed/{video_id}" if video_id else url
+            lista.append({
+                "nombre": video.nombre,
+                "is_youtube": True,
+                "embed_url": embed,
+                "url_original": url,
+            })
+        else:
+            lista.append({
+                "nombre": video.nombre,
+                "is_youtube": False,
+                "embed_url": None,
+                "url_original": url,
+            })
+    return lista
