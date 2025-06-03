@@ -13,3 +13,7 @@ django-environ>=0.10.1
 # NLP con spaCy
 spacy>=3.5.0
 es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.5.0/es_core_news_sm-3.5.0-py3-none-any.whl
+
+nltk>=3.8.1
+
+ 
