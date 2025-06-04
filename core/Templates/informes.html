@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+  <link href="{% static 'css/lista.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</div>
 <div class="sidebar" id="sidebar">
@@ -12,16 +16,16 @@
 </div>
 
 <div class="right_col" role="main">
-  <h1>Reportes {{ periodo }}</h1>
+  <h1>Reportes</h1>
   <div class="mb-3">
-    <a href="?periodo=diario">Diario</a> |
-    <a href="?periodo=semanal">Semanal</a> |
-    <a href="?periodo=mensual">Mensual</a>
+    <a href="?periodo=diario" class="btn btn-add">Diario</a>
+    <a href="?periodo=semanal" class="btn btn-add">Semanal</a>
+    <a href="?periodo=mensual" class="btn btn-add">Mensual</a>
   </div>
 
   <table class="user-table">
     <thead>
-      <tr><th>Tema</th><th>Total</th></tr>
+      <tr><th>Nombre Tema</th><th>Solicitado</th></tr>
     </thead>
     <tbody>
       {% for inf in informes %}

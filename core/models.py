@@ -21,9 +21,13 @@ class UsuarioManager(BaseUserManager):
         if not id_rut:
             raise ValueError('The RUN must be set')
         email = self.normalize_email(email)
+        # If no explicit 'correo' is provided use the same value as 'email'
+        correo = extra_fields.pop('correo', email)
+
         user = self.model(
             id_rut=id_rut,
             email=email,
+            correo=correo,
             nombre=nombre,
             apellido=apellido,
             **extra_fields
