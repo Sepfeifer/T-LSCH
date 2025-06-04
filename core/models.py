@@ -104,3 +104,19 @@ class Opcion(models.Model):
     encuesta = models.ForeignKey(Encuesta, related_name='opciones', on_delete=models.CASCADE)
     texto = models.CharField(max_length=255)
     votos = models.PositiveIntegerField(default=0)
+
+class Tramite(models.Model):
+    frase_original = models.TextField(blank=True, default="")
+    playlist = models.JSONField(default=list, blank=True)
+    encuesta = models.ForeignKey(
+        'Encuesta',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='tramites'
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Trámite #{self.id}: {self.frase_original[:30]}…"

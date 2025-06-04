@@ -2,84 +2,202 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Encuesta{% endblock %}
+{% block title %}Ver Trámite y Encuesta{% endblock %}
 
 {% block extra_css %}
-  <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
-  <style>
-    .encuesta-container {
-      max-width: 600px;
-      margin: 40px auto;
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .encuesta-container h3 {
-      color: #003366;
-      margin-bottom: 15px;
-    }
-    .opcion-radio {
-      margin-top: 10px;
-      display: block;
-    }
-    .btn-votar {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background: #003366;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .btn-votar:hover {
-      background: #002244;
-    }
-    #playerHTML5, #playerYT {
-      width: 100%;
-      max-width: 800px;
-      height: 450px;
-      background: #000;
-      margin: 0 auto 20px auto;
-    }
-    #playerHTML5 { display: none; }
-    #playerYT { display: none; }
-  </style>
+<link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
+<style>
+  .playlist-container {
+    max-width: 800px;
+    margin: 40px auto;
+    text-align: center;
+  }
+  #playerHTML5, #playerYT {
+    width: 100%;
+    height: 450px;
+    background: #000;
+    margin: 0 auto 20px auto;
+  }
+  #playerHTML5 { display: none; }
+  #playerYT { display: none; }
+  .btn-votar {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #003366;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-votar:hover {
+    background: #002244;
+  }
+  .mensaje-espera {
+    margin-top: 30px;
+    color: #aa0000;
+    font-weight: 500;
+    text-align: center;
+  }
+  .btn-refrescar {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: #ffaa00;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .btn-refrescar:hover {
+    background: #ff8800;
+  }
+  .encuesta-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .encuesta-container h3 {
+    color: #003366;
+    margin-bottom: 15px;
+  }
+  .opcion-radio {
+    margin-top: 10px;
+    display: block;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
   <div class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</div>
   <div class="sidebar" id="sidebar">
-    <a href="{% url 'vista_admin' %}">Menú Principal</a>
-    <a href="{% url 'traductor' %}">Traducir a LSCH</a>
-    <a href="{% url 'listar_videos' %}">Realizar encuesta</a>
+    <a href="{% url 'usuario_consulta' %}">Enviar Nueva Consulta</a>
+    <a href="{% url 'ver_encuesta_usuario' tramite.id %}">Ver Trámite Actual</a>
     <a href="{% url 'logout' %}">Cerrar sesión</a>
   </div>
 
-  <div class="encuesta-container">
-    <h3>{{ encuesta.pregunta }}</h3>
-    <form method="post" action="{% url 'responder_encuesta' encuesta.id %}">
-      {% csrf_token %}
-      {% for opcion in encuesta.opciones.all %}
-        <label class="opcion-radio">
-          <input type="radio" name="opcion_sel" value="{{ opcion.id }}"> {{ opcion.texto }}
-        </label>
-      {% endfor %}
-      <button type="submit" class="btn-votar">Votar</button>
-    </form>
+  <div class="playlist-container">
+    <h2 style="color: #003366; margin-bottom: 20px;">Reproduciendo Traducción</h2>
+
+    {# — Reproductor HTML5 — #}
+    <video id="playerHTML5" controls></video>
+    {# — Reproductor YouTube — #}
+    <div id="playerYT"></div>
+
+    {% if not encuesta %}
+      <div class="mensaje-espera">
+        Aún no se ha generado la traducción.<br>
+        Por favor, espera a que el funcionario pulse “Generar Traducción” y cree la encuesta.
+      </div>
+      <button class="btn-refrescar" onclick="window.location.reload()">Refrescar ahora</button>
+    {% elif not playlist %}
+      {# Ocurre si el funcionario creó la encuesta, pero aún no guardó la playlist #}
+      <div class="mensaje-espera">
+        La encuesta ya está lista, pero falta la traducción (playlist).<br>
+        El funcionario debe generar la traducción primero.
+      </div>
+      <button class="btn-refrescar" onclick="window.location.reload()">Refrescar ahora</button>
+    {% endif %}
   </div>
 
-  {# Reproductor de Videos con JS (igual que en traductor) #}
-  <video id="playerHTML5" controls></video>
-  <div id="playerYT"></div>
+  {# — Si existe encuesta Y playlist, los reproducimos y mostramos formulario de votación — #}
+  {% if encuesta and playlist %}
+    <div class="encuesta-container">
+      <h3>{{ encuesta.pregunta }}</h3>
+      <form method="post" action="{% url 'responder_encuesta' tramite.id %}">
+        {% csrf_token %}
+        {% for opcion in encuesta.opciones.all %}
+          <label class="opcion-radio">
+            <input type="radio" name="opcion_sel" value="{{ opcion.id }}"> {{ opcion.texto }}
+          </label>
+        {% endfor %}
+        <button type="submit" class="btn-votar">Votar</button>
+      </form>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block extra_js %}
-  <script>
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+  }
+
+  // — Si no hay encuesta o no hay playlist, recargar cada 10 segundos —
+  {% if not encuesta or not playlist %}
+    setTimeout(function(){
+      window.location.reload();
+    }, 10000);
+  {% endif %}
+
+  // — Convertir playlist Django → JS y reproducir si existe —
+  const playlist = [
+    {% for item in playlist %}
+      {
+        url: "{{ item.url }}",
+        isYouTube: {{ item.is_youtube|yesno:"true,false" }}
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+  let currentIndex = 0;
+  let ytPlayer = null;
+
+  function playNext() {
+    if (currentIndex >= playlist.length) {
+      document.getElementById('playerHTML5').style.display = 'none';
+      document.getElementById('playerYT').style.display = 'none';
+      return;
     }
-    // Añade aquí la misma lógica de reproducción que usas en traductor.html
-    // para consumir `playlist = {{ playlist|safe }}` y llamar a playNext()
-  </script>
+    const item = playlist[currentIndex];
+    if (item.isYouTube) {
+      document.getElementById('playerHTML5').style.display = 'none';
+      document.getElementById('playerYT').style.display = 'block';
+      if (!ytPlayer) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+        window.onYouTubeIframeAPIReady = function() {
+          ytPlayer = new YT.Player('playerYT', {
+            height: '450',
+            width: '800',
+            videoId: item.url.split('/embed/')[1].split('?')[0],
+            playerVars: { 'autoplay': 1, 'controls': 1 },
+            events: { 'onStateChange': onPlayerStateChange }
+          });
+        };
+      } else {
+        const videoId = item.url.split('/embed/')[1].split('?')[0];
+        ytPlayer.loadVideoById(videoId);
+      }
+    } else {
+      if (ytPlayer) {
+        ytPlayer.stopVideo();
+      }
+      document.getElementById('playerYT').style.display = 'none';
+      const vid = document.getElementById('playerHTML5');
+      vid.src = item.url;
+      vid.style.display = 'block';
+      vid.play();
+    }
+    currentIndex++;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const vid = document.getElementById('playerHTML5');
+    vid.addEventListener('ended', function() {
+      playNext();
+    });
+
+    if (playlist.length > 0) {
+      playNext();
+    }
+
+    window.onPlayerStateChange = function(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        playNext();
+      }
+    };
+  });
+</script>
 {% endblock %}

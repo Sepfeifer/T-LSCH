@@ -8,7 +8,7 @@ User = get_user_model()
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
-from .models import Usuario, Video, Tema, Encuesta, Opcion
+from .models import Usuario, Video, Tema, Encuesta, Opcion, Tramite
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
@@ -247,130 +247,164 @@ def eliminar_video(request, video_id):
     return redirect('listar_videos')
 
 
+def usuario_consulta(request):
+    """
+    Vista pública donde el usuario sordo-mudo envía su texto de consulta.
+    - Si es GET, muestra el formulario.
+    - Si es POST, lee 'frase' del formulario, crea un Tramite(frase_original=…) y redirige
+      a la página de esa misma consulta para ver playlist+encuesta.
+    """
+    if request.method == "POST":
+        texto = request.POST.get("frase", "").strip()
+        if texto:
+            tramite = Tramite.objects.create(frase_original=texto)
+            return redirect('ver_encuesta_usuario', tramite_id=tramite.id)
+
+    return render(request, "usuario/consulta.html")
 
 
 def traductor(request):
     """
-    Vista que recibe un texto (POST), lo tokeniza respetando comillas,
-    busca cada token en Video.nombre o sus sinónimos y arma la lista 'playlist'.
-    Al final guarda 'playlist' en sesión para que luego la encuesta la pueda reproducir.
+    Vista que el funcionario usa para:
+    - Mostrar la última consulta recibida (si existe).
+    - Aceptar la respuesta en texto (POST) para generar playlist.
+    - Botón “Refrescar” para recargar y verificar nueva consulta.
     """
+    # 1) Recuperar el trámite más reciente (si hay) que aún no tenga encuesta creada.
+    #    De este modo, el funcionario ve siempre el último que falta atención.
+    ultimo_tramite = Tramite.objects.order_by('-creado_en').first()
     frase = ""
     playlist = []
     matches = {}
 
-    if request.method == "POST":
-        frase = request.POST.get("frase", "").strip()
-        if frase:
-            # 1) Separar tokens, pero si hay algo entre comillas, desmenúzalo por letra
-            tokens = []
-            for m in re.finditer(r'"([^"]+)"|(\S+)', frase):
-                if m.group(1) is not None:
-                    # Dentro de comillas: cada carácter (omitir espacios)
-                    for ch in m.group(1):
-                        if ch.strip():
-                            tokens.append(ch.lower())
-                else:
-                    # Token normal
-                    tokens.append(m.group(2).lower())
+    if ultimo_tramite:
+        frase = ultimo_tramite.frase_original
 
-            # 2) Por cada token, buscar video por nombre o sinónimo
-            for token in tokens:
-                video = Video.objects.filter(nombre__iexact=token).first()
-                if not video:
-                    video = Video.objects.filter(nombre__icontains=token).first()
-
-                if not video:
-                    for syn in get_synonyms(token):
-                        video = Video.objects.filter(nombre__icontains=syn).first()
-                        if video:
-                            break
-
-                if video:
-                    url = video.url_codigo.strip()
-                    if "youtube.com" in url or "youtu.be" in url:
-                        # Extraer ID de YouTube
-                        video_id = None
-                        if "watch?v=" in url:
-                            after = url.split("watch?v=")[1]
-                            video_id = after.split("&")[0]
-                        elif "youtu.be/" in url:
-                            after = url.split("youtu.be/")[1]
-                            video_id = after.split("?")[0]
-                        if video_id:
-                            embed = f"https://www.youtube.com/embed/{video_id}?enablejsapi=1&autoplay=1"
-                        else:
-                            embed = url
-                        playlist.append({
-                            "titulo": video.nombre,
-                            "url": embed,
-                            "is_youtube": True,
-                        })
+        if request.method == "POST":
+            # Si llega un POST de “Generar Traducción”
+            texto_respuesta = request.POST.get("frase_traductor", "").strip()
+            if texto_respuesta:
+                # Extraer tokens / palabras para buscar videos
+                tokens = []
+                for m in re.finditer(r'"([^"]+)"|(\S+)', texto_respuesta):
+                    if m.group(1) is not None:
+                        # Dentro de comillas → deletrear
+                        for ch in m.group(1):
+                            if ch.strip():
+                                tokens.append(ch.lower())
                     else:
-                        playlist.append({
-                            "titulo": video.nombre,
-                            "url": video.url_codigo,
-                            "is_youtube": False,
-                        })
+                        tokens.append(m.group(2).lower())
 
-                    # Guardar coincidencia para mostrar texto de matches
-                    matches[token] = video.nombre
+                # Construir playlist en el mismo orden
+                lista_videos = []
+                for token in tokens:
+                    # 1) Buscar video por nombre exacto o parcial
+                    video = Video.objects.filter(nombre__iexact=token).first() \
+                            or Video.objects.filter(nombre__icontains=token).first()
+                    # 2) Si no hay, buscar sinónimo
+                    if not video:
+                        for syn in get_synonyms(token):
+                            video = Video.objects.filter(nombre__icontains=syn).first()
+                            if video:
+                                break
+                    # 3) Si encuentra, convertir a embed o URL directa
+                    if video:
+                        url = video.url_codigo.strip()
+                        if "youtube.com" in url or "youtu.be" in url:
+                            video_id = None
+                            if "watch?v=" in url:
+                                video_id = url.split("watch?v=")[1].split("&")[0]
+                            elif "youtu.be/" in url:
+                                video_id = url.split("youtu.be/")[1].split("?")[0]
+                            embed = f"https://www.youtube.com/embed/{video_id}?enablejsapi=1&autoplay=1" if video_id else url
+                            lista_videos.append({
+                                "titulo": video.nombre,
+                                "url": embed,
+                                "is_youtube": True
+                            })
+                        else:
+                            lista_videos.append({
+                                "titulo": video.nombre,
+                                "url": video.url_codigo,
+                                "is_youtube": False
+                            })
+                        # Guardar coincidencia para mostrar en lista
+                        matches[token] = video.nombre
 
-            # 3) Guardar la playlist en sesión para que la encuesta pública la reproduzca
-            request.session['ultima_playlist'] = playlist
+                # 4) Guardar playlist en el propio trámite
+                ultimo_tramite.playlist = lista_videos
+                ultimo_tramite.save()
 
-    return render(request, "traductor.html", {
+                # NOTA: NO REDIRIGIMOS aquí; el funcionario se queda en la misma página.
+                # Al recargar manualmente, verá confirmación o lista de coincidencias.
+
+    context = {
         "frase": frase,
-        "playlist": playlist,
+        "playlist": ultimo_tramite.playlist if ultimo_tramite else [],
         "matches": matches,
-    })
+        "tramite": ultimo_tramite
+    }
+    return render(request, "funcionario/traductor.html", context)
 
 
-def generar_encuesta(request):
+def crear_encuesta(request, tramite_id):
     """
-    Recibe el POST desde el segundo formulario de traductor.html (action="/generar_encuesta/").
-    Crea una Encuesta y sus Opciones, luego redirige a /encuesta/<id>/.
+    El funcionario crea la encuesta para el trámite indicado.
+    - Si POST, recoge 'encuestaPregunta' y 'opcion'[] del formulario,
+      genera el objeto Encuesta y sus Opciones.
+    - NO redirige al usuario final; se queda en la pantalla de funcionario.
     """
+    tramite = get_object_or_404(Tramite, id=tramite_id)
+
     if request.method == "POST":
-        pregunta = request.POST.get('encuestaPregunta', '').strip()
-        opciones = [v.strip() for v in request.POST.getlist('opcion') if v.strip()]
+        pregunta = request.POST.get('encuestaPregunta', "").strip()
+        opciones = [texto.strip() for texto in request.POST.getlist('opcion') if texto.strip()]
         if pregunta and len(opciones) >= 2:
-            # 1) Crear modelo Encuesta
+            # 1) Crear la encuesta
             encuesta = Encuesta.objects.create(pregunta=pregunta)
-            # 2) Crear cada Opcion
+            # 2) Crear cada opción
             for texto in opciones:
                 Opcion.objects.create(encuesta=encuesta, texto=texto)
-            # 3) Redirigir a la página pública de la encuesta
-            return redirect('ver_encuesta', encuesta_id=encuesta.id)
-    # Si algo está mal (pregunta vacía o <2 opciones), volver a la vista del traductor
+            # 3) Asociar la encuesta al trámite
+            tramite.encuesta = encuesta
+            tramite.save()
+            # Quedarse en la misma página de traductor para ese trámite
+            return redirect('traductor')
+
+    # Si no es POST o faltan datos, regresar al traductor igualmente
     return redirect('traductor')
 
 
-def ver_encuesta(request, encuesta_id):
+def ver_encuesta(request, tramite_id):
     """
-    Muestra la encuesta para que el usuario (sordo-mudo) vote. También reproduce
-    la ‘ultima_playlist’ que guardó el funcionario en sesión desde /traductor/.
+    Vista pública para que el usuario sordo-mudo vea la playlist + encuesta.
+    - Si la encuesta NO existe aún, solo muestra mensaje de “espera”. 
+    - Solo si existe encuesta Y playlist, permite reproducir videos y votar.
     """
-    encuesta = get_object_or_404(Encuesta, id=encuesta_id)
-    playlist = request.session.get('ultima_playlist', [])
+    tramite = get_object_or_404(Tramite, id=tramite_id)
+    encuesta = tramite.encuesta  # Puede ser None si aún no se creó
+    playlist = tramite.playlist if (encuesta and tramite.playlist) else []  # Solo mostrar playlist si la encuesta existe
 
-    return render(request, 'usuario/ver_encuesta.html', {
-        'encuesta': encuesta,
-        'playlist': playlist,
+    return render(request, "usuario/ver_encuesta.html", {
+        "tramite": tramite,
+        "playlist": playlist,
+        "encuesta": encuesta,
     })
 
 
-def responder_encuesta(request, encuesta_id):
+def responder_encuesta(request, tramite_id):
     """
-    Procesa el POST cuando el usuario final envía su voto.
+    Procesa la respuesta del usuario a la encuesta.
+    - Si es POST, incrementa el conteo de la opción elegida.
+    - Luego redirige a usuario_consulta para que el usuario inicie nuevo trámite.
     """
     if request.method == "POST":
-        opcion_id = request.POST.get('opcion_sel')
-        if opcion_id:
-            opcion = get_object_or_404(Opcion, id=int(opcion_id), encuesta_id=encuesta_id)
-            opcion.votos += 1
-            opcion.save()
-            # Aquí rediriges a una página de “Gracias por votar” si quieres,
-            # o a la misma vista de resultados. Por ahora:
-            return redirect('agradecimiento_encuesta')
-    return redirect('ver_encuesta', encuesta_id=encuesta_id)
+        # El formulario envía 'opcion_sel' con el id de la opción
+        opcion_id = int(request.POST.get('opcion_sel'))
+        opcion = get_object_or_404(Opcion, id=opcion_id, encuesta__tramites__id=tramite_id)
+        opcion.votos += 1
+        opcion.save()
+        # Después de votar, volvemos a la página de envío de consulta (nueva consulta)
+        return redirect('usuario_consulta')
+    return redirect('ver_encuesta_usuario', tramite_id=tramite_id)
+

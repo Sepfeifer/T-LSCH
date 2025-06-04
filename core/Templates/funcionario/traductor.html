@@ -1,0 +1,418 @@
+{# core/templates/funcionario/traductor.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mesa de Trabajo – Funcionario{% endblock %}
+
+{% block extra_css %}
+  <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
+  <style>
+    /* ================= CONTENEDOR PRINCIPAL ================= */
+    .traductor-container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .mensaje-sin-tramite {
+      text-align: center;
+      color: #aa0000;
+      font-weight: 600;
+      margin-top: 80px;
+    }
+    .consulta-mje {
+      background: #e0f2fe;
+      color: #003366;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    .traductor-textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      resize: none;
+      box-sizing: border-box;
+      background: #f9f9f9;
+    }
+    .traductor-button {
+      margin-top: 15px;
+      padding: 12px 25px;
+      background: #003366;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    .traductor-button:hover {
+      background: #002244;
+    }
+    .resultados {
+      margin-top: 30px;
+    }
+    .result-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .result-list li {
+      background: #f8f9fa;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #003366;
+    }
+    .btn-crear-encuesta {
+      margin-top: 25px;
+      padding: 12px 25px;
+      background: #ffaa00;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-crear-encuesta:hover {
+      background: #ff8800;
+    }
+    .btn-refrescar {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: #ffaa00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-refrescar:hover {
+      background: #ff8800;
+    }
+
+    /* ================= REPRODUCTORES (HTML5 + YT) ================ */
+    #playerHTML5, #playerYT {
+      width: 100%;
+      max-width: 800px;
+      height: 450px;
+      background: #000;
+      margin: 0 auto 20px auto;
+    }
+    #playerHTML5 {
+      display: none;  /* Solo si es MP4 local */
+    }
+    #playerYT {
+      display: none;  /* Solo si es YouTube */
+    }
+    .btn-reiniciar {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #003366;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-reiniciar:hover {
+      background: #002244;
+    }
+
+    /* ================ SECCIÓN DE ENCUESTA FUNCIONARIO ================ */
+    #encuestaSection {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: none; /* Arranca oculta */
+    }
+    #encuestaSection h3 {
+      color: #003366;
+      margin-bottom: 15px;
+    }
+    .encuesta-input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    #btnAgregarOpcion {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: #ffaa00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s;
+    }
+    #btnAgregarOpcion:hover {
+      background: #ff8800;
+    }
+    #btnGenerarEncuesta {
+      margin-top: 20px;
+      padding: 12px 25px;
+      background: #003366;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    #btnGenerarEncuesta:hover {
+      background: #002244;
+    }
+    /* ================ FIN SECCIÓN ENCUESTA ====================== */
+  </style>
+{% endblock %}
+
+{% block content %}
+
+  {# –– BOTÓN HAMBURGUESA Y SIDEBAR –– #}
+  <div class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</div>
+  <div class="sidebar" id="sidebar">
+    <a href="{% url 'usuario_consulta' %}">Panel Usuario</a>
+    <a href="{% url 'traductor' %}">Traducir</a>
+    <a href="{% url 'logout' %}">Cerrar sesión</a>
+  </div>
+
+  {# –– Si no existe ningún trámite pendiente –– #}
+  {% if not tramite %}
+    <div class="mensaje-sin-tramite">No hay consultas pendientes en este momento.</div>
+  {% else %}
+    <div class="traductor-container">
+      <h2 style="color: #003366; text-align: center; margin-bottom: 20px;">
+        Mesa de Trabajo – Funcionario
+      </h2>
+
+      {# == 1. Mostrar la consulta original del usuario (solo lectura) == #}
+      <div class="consulta-mje">
+        <strong>Consulta del usuario:</strong><br>
+        {{ frase }}
+      </div>
+
+      {# == 2. Botones de acción: Refrescar y Generar Traducción == #}
+      <div style="margin-bottom: 20px;">
+        <button type="button" class="btn-refrescar" onclick="window.location.reload()">
+          🔄 Refrescar
+        </button>
+      </div>
+
+      {# == 3. Formulario para que el funcionario escriba su frase y genere traducción == #}
+      <form method="post" action="{% url 'traductor' %}">
+        {% csrf_token %}
+        <label for="frase_traductora" style="font-weight:600; color:#003366;">
+          Tu respuesta a traducir:
+        </label>
+        <textarea
+          id="frase_traductora"
+          name="frase_traductor"
+          class="traductor-textarea"
+          placeholder="Escribe aquí la frase que quieras traducir…"
+        >{{ request.POST.frase_traductor }}</textarea><br>
+        <button type="submit" class="traductor-button">Generar Traducción</button>
+      </form>
+
+      {# == 4. Si ya existe playlist, mostrar lista de coincidencias == #}
+      {% if playlist %}
+        <div class="resultados">
+          <h4 style="color: #003366;">Palabras encontradas y títulos de videos:</h4>
+          <ul class="result-list">
+            {% for token, titulo in matches.items %}
+              <li>{{ token }} ➔ {{ titulo }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {# == 5. Mostrar reproductores y botón “Reiniciar Secuencia” == #}
+        <div style="margin-top: 30px; text-align: center;">
+          <video id="playerHTML5" controls></video>
+          <div id="playerYT"></div>
+          <button id="btnReiniciar" class="btn-reiniciar">Reiniciar Secuencia</button>
+        </div>
+      {% endif %}
+
+      {# == 6. Botón “Crear Encuesta” solo si hay playlist y aún no existe encuesta == #}
+      {% if playlist and not tramite.encuesta %}
+        <form method="post" action="{% url 'crear_encuesta' tramite.id %}" style="margin-top: 20px;">
+          {% csrf_token %}
+          <button type="button" id="btnMostrarEncuesta" class="btn-crear-encuesta">
+            Crear Encuesta para el Usuario
+          </button>
+        </form>
+      {% endif %}
+
+      {# == 7. Si el funcionario hace clic en “Crear Encuesta”, mostrar este bloque == #}
+      {% if playlist and not tramite.encuesta %}
+        <div id="encuestaSection">
+          <form method="post" action="{% url 'crear_encuesta' tramite.id %}">
+            {% csrf_token %}
+            <h3>Ingrese la información requerida para la encuesta</h3>
+
+            {# Pregunta de la encuesta #}
+            <input
+              type="text"
+              id="encuestaPregunta"
+              name="encuestaPregunta"
+              class="encuesta-input"
+              placeholder="Ingrese pregunta*"
+            />
+
+            {# Contenedor de opciones – name="opcion" #}
+            <div id="opcionesContainer">
+              <input
+                type="text"
+                name="opcion"
+                class="encuesta-input opcion-input"
+                placeholder="Ingrese opción 1"
+              />
+              <input
+                type="text"
+                name="opcion"
+                class="encuesta-input opcion-input"
+                placeholder="Ingrese opción 2"
+              />
+            </div>
+
+            {# Botón para agregar más opciones dinámicamente #}
+            <button type="button" id="btnAgregarOpcion">+ Agregar otra opción</button>
+
+            <br>
+            {# Botón para enviar y crear la encuesta #}
+            <button type="submit" id="btnGenerarEncuesta">Generar Encuesta</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // —————————————————————————————————————————————————————
+    // 1) Convertir la playlist (pasada desde Django) a un array JS
+    // —————————————————————————————————————————————————————
+    const playlist = [
+      {% if playlist %}
+        {% for item in playlist %}
+          {
+            url: "{{ item.url }}",
+            isYouTube: {{ item.is_youtube|yesno:"true,false" }}
+          }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% endif %}
+    ];
+    let currentIndex = 0;
+    let ytPlayer = null;
+
+    function playNext() {
+      if (currentIndex >= playlist.length) {
+        document.getElementById('playerHTML5').style.display = 'none';
+        document.getElementById('playerYT').style.display = 'none';
+        return;
+      }
+      const item = playlist[currentIndex];
+      if (item.isYouTube) {
+        document.getElementById('playerHTML5').style.display = 'none';
+        document.getElementById('playerYT').style.display = 'block';
+        if (!ytPlayer) {
+          const tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          document.body.appendChild(tag);
+          window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('playerYT', {
+              height: '450',
+              width: '800',
+              videoId: item.url.split('/embed/')[1].split('?')[0],
+              playerVars: { 'autoplay': 1, 'controls': 1 },
+              events: { 'onStateChange': onPlayerStateChange }
+            });
+          };
+        } else {
+          const videoId = item.url.split('/embed/')[1].split('?')[0];
+          ytPlayer.loadVideoById(videoId);
+        }
+      } else {
+        if (ytPlayer) {
+          ytPlayer.stopVideo();
+        }
+        document.getElementById('playerYT').style.display = 'none';
+        const vid = document.getElementById('playerHTML5');
+        vid.src = item.url;
+        vid.style.display = 'block';
+        vid.play();
+      }
+      currentIndex++;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const vid = document.getElementById('playerHTML5');
+      vid.addEventListener('ended', function() { playNext(); });
+
+      if (playlist.length > 0) {
+        playNext();
+      }
+
+      const btnReiniciar = document.getElementById('btnReiniciar');
+      if (btnReiniciar) {
+        btnReiniciar.addEventListener('click', function() {
+          currentIndex = 0;
+          playNext();
+        });
+      }
+
+      // — Mostrar/Ocultar bloque de encuesta —
+      const btnMostrarEncuesta = document.getElementById('btnMostrarEncuesta');
+      const encuestaSection = document.getElementById('encuestaSection');
+      if (btnMostrarEncuesta && encuestaSection) {
+        btnMostrarEncuesta.addEventListener('click', function() {
+          encuestaSection.style.display = (encuestaSection.style.display === 'none' || !encuestaSection.style.display)
+            ? 'block'
+            : 'none';
+        });
+      }
+
+      // — Agregar dinámicamente nuevos inputs name="opcion" —
+      const btnAgregarOpcion = document.getElementById('btnAgregarOpcion');
+      const opcionesContainer = document.getElementById('opcionesContainer');
+      if (btnAgregarOpcion && opcionesContainer) {
+        btnAgregarOpcion.addEventListener('click', function() {
+          const actuales = opcionesContainer.querySelectorAll('.opcion-input').length;
+          const nueva = document.createElement('input');
+          nueva.type = 'text';
+          nueva.name = 'opcion';  // importante para request.POST.getlist('opcion')
+          nueva.className = 'encuesta-input opcion-input';
+          nueva.placeholder = `Ingrese opción ${actuales + 1}`;
+          opcionesContainer.appendChild(nueva);
+        });
+      }
+
+      // — Detectar fin de video YouTube (IFrame API) —
+      window.onPlayerStateChange = function(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+          playNext();
+        }
+      };
+    });
+  </script>
+{% endblock %}
