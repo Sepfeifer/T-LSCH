@@ -7,6 +7,7 @@
 {% block extra_css %}
   <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
   <style>
+    /* ====================== CONTENEDOR PRINCIPAL ====================== */
     .traductor-container {
       max-width: 900px;
       margin: 40px auto;
@@ -17,11 +18,12 @@
       display: flex;
       flex-direction: column;
     }
+
     .input-section {
       margin-bottom: 20px;
     }
 
-    /* === Recuperamos el estilo original del textarea y botón === */
+    /* ========= ESTILOS DEL TEXTAREA Y BOTONES PRINCIPALES ========= */
     .traductor-textarea {
       width: 100%;
       height: 150px;
@@ -42,13 +44,13 @@
       cursor: pointer;
       font-size: 1rem;
       transition: background 0.3s;
-      width: 100%;
     }
     .traductor-button:hover {
       background: #002244;
     }
-    /* === Fin del estilo original del textarea y botón === */
+    /* =============== FIN ESTILOS TEXTAREA Y BOTONES =============== */
 
+    /* ==================== REPRODUCTORES (HTML5 + YT) ==================== */
     #playerHTML5, #playerYT {
       width: 100%;
       max-width: 800px;
@@ -57,10 +59,10 @@
       margin: 0 auto 20px auto;
     }
     #playerHTML5 {
-      display: none;
+      display: none;  /* Se mostrará solo cuando toque reproducir un MP4 */
     }
     #playerYT {
-      display: none;
+      display: none;  /* Se mostrará solo cuando toque reproducir un video de YouTube */
     }
 
     .btn-reiniciar {
@@ -76,6 +78,62 @@
     .btn-reiniciar:hover {
       background: #002244;
     }
+    /* ================= FIN REPRODUCTORES ================= */
+
+    /* ====================== SECCIÓN DE ENCUESTA ====================== */
+    #encuestaSection {
+      display: none;           /* Oculto inicialmente */
+      margin-top: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #encuestaSection h3 {
+      color: #003366;
+      margin-bottom: 15px;
+    }
+    .encuesta-input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    /* Botón para agregar más opciones */
+    #btnAgregarOpcion {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: #ffaa00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s;
+    }
+    #btnAgregarOpcion:hover {
+      background: #ff8800;
+    }
+    /* Botón final para “Generar Encuesta” */
+    #btnGenerarEncuesta {
+      margin-top: 20px;
+      padding: 12px 25px;
+      background: #003366;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    #btnGenerarEncuesta:hover {
+      background: #002244;
+    }
+    /* =============== FIN SECCIÓN DE ENCUESTA =============== */
   </style>
 {% endblock %}
 
@@ -103,22 +161,29 @@
       <button id="btnReiniciar" class="btn-reiniciar">Reiniciar Secuencia</button>
     {% endif %}
 
-    <!-- FORMULARIO DE ENTRADA -->
+    <!-- =========== PRIMER FORMULARIO: Generar Traducción =========== -->
     <div class="input-section">
-      <form method="post">
+      <form method="post" action="{% url 'traductor' %}">
         {% csrf_token %}
         <textarea
           name="frase"
           class="traductor-textarea"
           placeholder="Ingresa la frase a traducir..."
         >{{ frase }}</textarea>
+
         <button type="submit" class="traductor-button">
           Generar Traducción
         </button>
+
+        {# Botón para mostrar/ocultar el bloque de encuesta #}
+        <button type="button" id="btnToggleEncuesta" class="traductor-button" style="margin-left: 10px;">
+          Generar Encuesta
+        </button>
       </form>
     </div>
+    {# =============== FIN PRIMER FORMULARIO =============== #}
 
-    <!-- Lista de palabras y títulos encontrados (opcional) -->
+    {# ============== Lista de “token ➔ video” ============== #}
     {% if matches %}
       <div class="matches-section">
         <h4>Palabras encontradas y títulos de video:</h4>
@@ -129,6 +194,47 @@
         </ul>
       </div>
     {% endif %}
+
+    {# =========== SEGUNDO FORMULARIO (Oculto): Crear Encuesta =========== #}
+    <div id="encuestaSection">
+      <form method="post" action="{% url 'generar_encuesta' %}">
+        {% csrf_token %}
+        <h3>Ingrese la información requerida para la encuesta</h3>
+
+        {# Campo de la pregunta #}
+        <input
+          type="text"
+          id="encuestaPregunta"
+          name="encuestaPregunta"
+          class="encuesta-input"
+          placeholder="Ingrese pregunta*"
+        />
+
+        {# Contenedor de opciones con name="opcion" #}
+        <div id="opcionesContainer">
+          <input
+            type="text"
+            name="opcion"
+            class="encuesta-input opcion-input"
+            placeholder="Ingrese opción 1"
+          />
+          <input
+            type="text"
+            name="opcion"
+            class="encuesta-input opcion-input"
+            placeholder="Ingrese opción 2"
+          />
+        </div>
+
+        {# Botón para agregar más <input name="opcion"> dinámicamente #}
+        <button type="button" id="btnAgregarOpcion">+ Agregar otra opción</button>
+
+        <br>
+        {# Botón que hace POST real a /generar_encuesta/ y crea la encuesta #}
+        <button type="submit" id="btnGenerarEncuesta">Generar Encuesta</button>
+      </form>
+    </div>
+    {# =============== FIN SEGUNDO FORMULARIO =============== #}
   </div>
 {% endblock %}
 
@@ -138,9 +244,9 @@
       document.getElementById('sidebar').classList.toggle('open');
     }
 
-    // --------------------------------------------
-    // 1) Convertir la playlist de Django en JS
-    // --------------------------------------------
+    // —————————————————————————————————————————————————————
+    // 1) Tomar la playlist que Django pasó al template y reproducir
+    // —————————————————————————————————————————————————————
     const playlist = [
       {% for item in playlist %}
         {
@@ -149,29 +255,20 @@
         }{% if not forloop.last %},{% endif %}
       {% endfor %}
     ];
-
     let currentIndex = 0;
     let ytPlayer = null;
 
-    // --------------------------------------------
-    // 2) Función para reproducir el siguiente video
-    // --------------------------------------------
     function playNext() {
       if (currentIndex >= playlist.length) {
-        // Fin de la secuencia
         document.getElementById('playerHTML5').style.display = 'none';
         document.getElementById('playerYT').style.display = 'none';
         return;
       }
-
       const item = playlist[currentIndex];
       if (item.isYouTube) {
-        // Mostrar y usar YouTube IFrame API
         document.getElementById('playerHTML5').style.display = 'none';
         document.getElementById('playerYT').style.display = 'block';
-
         if (!ytPlayer) {
-          // Cargar la API de YouTube, luego inicializar
           const tag = document.createElement('script');
           tag.src = "https://www.youtube.com/iframe_api";
           document.body.appendChild(tag);
@@ -181,19 +278,14 @@
               width: '800',
               videoId: item.url.split('/embed/')[1].split('?')[0],
               playerVars: { 'autoplay': 1, 'controls': 1 },
-              events: {
-                'onStateChange': onPlayerStateChange
-              }
+              events: { 'onStateChange': onPlayerStateChange }
             });
           };
         } else {
-          // Ya existe el player, solo cambiar videoId
           const videoId = item.url.split('/embed/')[1].split('?')[0];
           ytPlayer.loadVideoById(videoId);
         }
-
       } else {
-        // Mostrar y usar HTML5 <video>
         if (ytPlayer) {
           ytPlayer.stopVideo();
         }
@@ -203,25 +295,17 @@
         vid.style.display = 'block';
         vid.play();
       }
-
       currentIndex++;
     }
 
-    // --------------------------------------------
-    // 3) Evento para <video> HTML5 terminar
-    // --------------------------------------------
     document.addEventListener('DOMContentLoaded', function() {
       const vid = document.getElementById('playerHTML5');
-      vid.addEventListener('ended', function() {
-        playNext();
-      });
+      vid.addEventListener('ended', function() { playNext(); });
 
-      // Si inicio con playlist no vacía, arrancar secuencia
       if (playlist.length > 0) {
         playNext();
       }
 
-      // Botón “Reiniciar Secuencia”
       const btn = document.getElementById('btnReiniciar');
       if (btn) {
         btn.addEventListener('click', function() {
@@ -229,15 +313,35 @@
           playNext();
         });
       }
-    });
 
-    // --------------------------------------------
-    // 4) Función para detectar fin de video YouTube
-    // --------------------------------------------
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        playNext();
-      }
-    }
+      // — Mostrar/Ocultar bloque de encuesta —
+      const btnToggleEncuesta = document.getElementById('btnToggleEncuesta');
+      const encuestaSection = document.getElementById('encuestaSection');
+      btnToggleEncuesta.addEventListener('click', function() {
+        encuestaSection.style.display = (encuestaSection.style.display === 'none' || !encuestaSection.style.display)
+          ? 'block'
+          : 'none';
+      });
+
+      // — Agregar dinámicamente nuevos inputs name="opcion" —
+      const btnAgregarOpcion = document.getElementById('btnAgregarOpcion');
+      const opcionesContainer = document.getElementById('opcionesContainer');
+      btnAgregarOpcion.addEventListener('click', function() {
+        const actuales = opcionesContainer.querySelectorAll('.opcion-input').length;
+        const nueva = document.createElement('input');
+        nueva.type = 'text';
+        nueva.name = 'opcion';  // muy importante para request.POST.getlist('opcion')
+        nueva.className = 'encuesta-input opcion-input';
+        nueva.placeholder = `Ingrese opción ${actuales + 1}`;
+        opcionesContainer.appendChild(nueva);
+      });
+
+      // — Detectar fin de video YouTube —
+      window.onPlayerStateChange = function(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+          playNext();
+        }
+      };
+    });
   </script>
 {% endblock %}
