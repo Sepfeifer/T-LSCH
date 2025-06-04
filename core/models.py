@@ -96,4 +96,11 @@ class Video(models.Model):
     def __str__(self):
         return self.nombre
     
-   
+class Encuesta(models.Model):
+     pregunta = models.CharField(max_length=255)
+    # Podrías tener un campo ForeignKey al funcionario que la creó, fecha, etc.
+
+class Opcion(models.Model):
+    encuesta = models.ForeignKey(Encuesta, related_name='opciones', on_delete=models.CASCADE)
+    texto = models.CharField(max_length=255)
+    votos = models.PositiveIntegerField(default=0)

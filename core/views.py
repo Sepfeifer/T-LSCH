@@ -8,7 +8,7 @@ User = get_user_model()
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
-from .models import Usuario, Video, Tema
+from .models import Usuario, Video, Tema, Encuesta, Opcion
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
@@ -251,13 +251,9 @@ def eliminar_video(request, video_id):
 
 def traductor(request):
     """
-    Vista que recibe un texto (POST).
-    - Divide la frase en “tokens” normales, salvo que detecte un segmento entre comillas.
-      Si ve "palabra", toma cada letra de palabra como token individual.
-    - Para cada token en orden:
-        1) Busca Video.nombre__iexact o __icontains.
-        2) Si no encuentra, prueba sinónimos.
-    - Construye 'playlist' con { 'titulo', 'url', 'is_youtube' } en el orden.
+    Vista que recibe un texto (POST), lo tokeniza respetando comillas,
+    busca cada token en Video.nombre o sus sinónimos y arma la lista 'playlist'.
+    Al final guarda 'playlist' en sesión para que luego la encuesta la pueda reproducir.
     """
     frase = ""
     playlist = []
@@ -266,34 +262,30 @@ def traductor(request):
     if request.method == "POST":
         frase = request.POST.get("frase", "").strip()
         if frase:
-            # 1) Compilar lista de tokens respetando comillas
+            # 1) Separar tokens, pero si hay algo entre comillas, desmenúzalo por letra
             tokens = []
-            # Patrón: grupo1 = texto dentro de comillas, grupo2 = cualquier secuencia no-espacio
             for m in re.finditer(r'"([^"]+)"|(\S+)', frase):
                 if m.group(1) is not None:
-                    # Dentro de comillas: descomponer en caracteres individuales
+                    # Dentro de comillas: cada carácter (omitir espacios)
                     for ch in m.group(1):
-                        if ch.strip():  # omitir espacios dentro de la cadena
+                        if ch.strip():
                             tokens.append(ch.lower())
                 else:
-                    # Token normal (palabra fuera de comillas)
+                    # Token normal
                     tokens.append(m.group(2).lower())
 
-            # 2) Para cada token, buscar video en orden
+            # 2) Por cada token, buscar video por nombre o sinónimo
             for token in tokens:
-                # 2.1) Buscar por nombre exacto o parcial
                 video = Video.objects.filter(nombre__iexact=token).first()
                 if not video:
                     video = Video.objects.filter(nombre__icontains=token).first()
 
-                # 2.2) Si no halló por nombre, buscar en sinónimos
                 if not video:
                     for syn in get_synonyms(token):
                         video = Video.objects.filter(nombre__icontains=syn).first()
                         if video:
                             break
 
-                # 2.3) Si encontró video, armar entrada de playlist
                 if video:
                     url = video.url_codigo.strip()
                     if "youtube.com" in url or "youtu.be" in url:
@@ -321,8 +313,11 @@ def traductor(request):
                             "is_youtube": False,
                         })
 
-                    # Guardar para mostrar lista de coincidencias
+                    # Guardar coincidencia para mostrar texto de matches
                     matches[token] = video.nombre
+
+            # 3) Guardar la playlist en sesión para que la encuesta pública la reproduzca
+            request.session['ultima_playlist'] = playlist
 
     return render(request, "traductor.html", {
         "frase": frase,
@@ -331,34 +326,51 @@ def traductor(request):
     })
 
 
-def _videos_con_embed(qs):
+def generar_encuesta(request):
     """
-    Dado un QuerySet de Video, devuelve lista de dicts con:
-    { nombre, is_youtube, embed_url, url_original } para usar en template.
+    Recibe el POST desde el segundo formulario de traductor.html (action="/generar_encuesta/").
+    Crea una Encuesta y sus Opciones, luego redirige a /encuesta/<id>/.
     """
-    lista = []
-    for video in qs:
-        url = video.url_codigo.strip()
-        if "youtube.com" in url or "youtu.be" in url:
-            video_id = None
-            if "watch?v=" in url:
-                after = url.split("watch?v=")[1]
-                video_id = after.split("&")[0]
-            elif "youtu.be/" in url:
-                after = url.split("youtu.be/")[1]
-                video_id = after.split("?")[0]
-            embed = f"https://www.youtube.com/embed/{video_id}" if video_id else url
-            lista.append({
-                "nombre": video.nombre,
-                "is_youtube": True,
-                "embed_url": embed,
-                "url_original": url,
-            })
-        else:
-            lista.append({
-                "nombre": video.nombre,
-                "is_youtube": False,
-                "embed_url": None,
-                "url_original": url,
-            })
-    return lista
+    if request.method == "POST":
+        pregunta = request.POST.get('encuestaPregunta', '').strip()
+        opciones = [v.strip() for v in request.POST.getlist('opcion') if v.strip()]
+        if pregunta and len(opciones) >= 2:
+            # 1) Crear modelo Encuesta
+            encuesta = Encuesta.objects.create(pregunta=pregunta)
+            # 2) Crear cada Opcion
+            for texto in opciones:
+                Opcion.objects.create(encuesta=encuesta, texto=texto)
+            # 3) Redirigir a la página pública de la encuesta
+            return redirect('ver_encuesta', encuesta_id=encuesta.id)
+    # Si algo está mal (pregunta vacía o <2 opciones), volver a la vista del traductor
+    return redirect('traductor')
+
+
+def ver_encuesta(request, encuesta_id):
+    """
+    Muestra la encuesta para que el usuario (sordo-mudo) vote. También reproduce
+    la ‘ultima_playlist’ que guardó el funcionario en sesión desde /traductor/.
+    """
+    encuesta = get_object_or_404(Encuesta, id=encuesta_id)
+    playlist = request.session.get('ultima_playlist', [])
+
+    return render(request, 'usuario/ver_encuesta.html', {
+        'encuesta': encuesta,
+        'playlist': playlist,
+    })
+
+
+def responder_encuesta(request, encuesta_id):
+    """
+    Procesa el POST cuando el usuario final envía su voto.
+    """
+    if request.method == "POST":
+        opcion_id = request.POST.get('opcion_sel')
+        if opcion_id:
+            opcion = get_object_or_404(Opcion, id=int(opcion_id), encuesta_id=encuesta_id)
+            opcion.votos += 1
+            opcion.save()
+            # Aquí rediriges a una página de “Gracias por votar” si quieres,
+            # o a la misma vista de resultados. Por ahora:
+            return redirect('agradecimiento_encuesta')
+    return redirect('ver_encuesta', encuesta_id=encuesta_id)

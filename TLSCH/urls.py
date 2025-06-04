@@ -33,4 +33,9 @@ urlpatterns = [
     path('funcionario/traductor/', traductor, name='traductor'),
     path('traductor/', traductor, name='traductor_directo'),
     
+    # Encuesta
+     # Procesar la encuesta que crea el funcionario (POST)
+    path('generar_encuesta/', views.generar_encuesta, name='generar_encuesta'),
+    path('encuesta/<int:encuesta_id>/', views.ver_encuesta, name='ver_encuesta'),
+    path('encuesta/<int:encuesta_id>/responder/', views.responder_encuesta, name='responder_encuesta'),
 ]
