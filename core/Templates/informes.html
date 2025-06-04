@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</div>
+<div class="sidebar" id="sidebar">
+  <a href="{% url 'vista_admin' %}">Menu Principal</a>
+  <a href="{% url 'listar_usuarios' %}">Administrar usuarios</a>
+  <a href="{% url 'listar_videos' %}">Videos LSCH</a>
+  <a href="{% url 'ver_informes' %}">Generar reporte</a>
+  <a href="{% url 'logout' %}">Cerrar sesión</a>
+</div>
+
+<div class="right_col" role="main">
+  <h1>Reportes {{ periodo }}</h1>
+  <div class="mb-3">
+    <a href="?periodo=diario">Diario</a> |
+    <a href="?periodo=semanal">Semanal</a> |
+    <a href="?periodo=mensual">Mensual</a>
+  </div>
+
+  <table class="user-table">
+    <thead>
+      <tr><th>Tema</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      {% for inf in informes %}
+      <tr>
+        <td>{{ inf.tema__nombre }}</td>
+        <td>{{ inf.total }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="2">No hay datos</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+  }
+</script>
+{% endblock %}

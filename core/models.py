@@ -104,3 +104,12 @@ class Opcion(models.Model):
     encuesta = models.ForeignKey(Encuesta, related_name='opciones', on_delete=models.CASCADE)
     texto = models.CharField(max_length=255)
     votos = models.PositiveIntegerField(default=0)
+
+
+class Informe(models.Model):
+    tema = models.ForeignKey(Tema, on_delete=models.CASCADE)
+    fecha = models.DateField()
+    cantidad = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('tema', 'fecha')

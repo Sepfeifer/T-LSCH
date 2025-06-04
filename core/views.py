@@ -8,13 +8,16 @@ User = get_user_model()
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
-from .models import Usuario, Video, Tema, Encuesta, Opcion
+from .models import Usuario, Video, Tema, Encuesta, Opcion, Informe
 from .forms import VideoForm
 from django.shortcuts import render
+from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from .services.spacy_translator import  translate_to_lsch
 from .services.spacy_extractor import extract_keywords_spacy
 from .services.synonym_service import get_synonyms
+from datetime import timedelta
+from django.db.models import Sum
 
 #Login  
 def login_view(request):
@@ -287,6 +290,15 @@ def traductor(request):
                             break
 
                 if video:
+                    # Incrementar el contador de informes por cada tema asociado
+                    today = timezone.now().date()
+                    for tema in video.temas.all():
+                        informe, _ = Informe.objects.get_or_create(
+                            tema=tema, fecha=today
+                        )
+                        informe.cantidad += 1
+                        informe.save()
+
                     url = video.url_codigo.strip()
                     if "youtube.com" in url or "youtu.be" in url:
                         # Extraer ID de YouTube
@@ -374,3 +386,29 @@ def responder_encuesta(request, encuesta_id):
             # o a la misma vista de resultados. Por ahora:
             return redirect('agradecimiento_encuesta')
     return redirect('ver_encuesta', encuesta_id=encuesta_id)
+
+
+def reportes(request):
+    if not (request.user.is_authenticated and (request.user.is_superuser or request.user.es_administrador)):
+        return redirect('login')
+
+    periodo = request.GET.get('periodo', 'diario')
+    today = timezone.now().date()
+    if periodo == 'semanal':
+        inicio = today - timedelta(days=7)
+    elif periodo == 'mensual':
+        inicio = today - timedelta(days=30)
+    else:
+        inicio = today
+
+    informes = (
+        Informe.objects.filter(fecha__gte=inicio, fecha__lte=today)
+        .values('tema__nombre')
+        .annotate(total=Sum('cantidad'))
+        .order_by('-total')
+    )
+
+    return render(request, 'informes.html', {
+        'informes': informes,
+        'periodo': periodo,
+    })
