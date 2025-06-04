@@ -1,4 +1,5 @@
 import re
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
@@ -18,6 +19,8 @@ from .services.spacy_extractor import extract_keywords_spacy
 from .services.synonym_service import get_synonyms
 from datetime import timedelta
 from django.db.models import Sum
+
+logger = logging.getLogger(__name__)
 
 #Login  
 def login_view(request):
@@ -72,16 +75,16 @@ def listar(request):
     return render(request, "admin_usuario/listar.html", {'usuarios': users})
 
 def agregar(request):
-    print("\n--- DEBUG: INICIO VISTA AGREGAR ---")  # Debug 1
-    print("Método HTTP:", request.method)  # Debug 2
+    logger.debug("\n--- DEBUG: INICIO VISTA AGREGAR ---")
+    logger.debug("Método HTTP: %s", request.method)
     
     if request.method == 'POST':
-        print("\nDEBUG: Datos recibidos del formulario:")  # Debug 3
-        print("POST data:", request.POST)  # Muestra todos los datos enviados
+        logger.debug("\nDEBUG: Datos recibidos del formulario:")
+        logger.debug("POST data: %s", request.POST)
         
         campos = ['id_rut', 'nombre', 'seg_nombre', 'apellido', 'apellido_m', 'correo', 'rol', 'clave']
         if all(request.POST.get(campo) for campo in campos):
-            print("\nDEBUG: Todos los campos están presentes")  # Debug 4
+            logger.debug("\nDEBUG: Todos los campos están presentes")
             
             id_rut = request.POST['id_rut']
             correo = request.POST['correo']
@@ -89,11 +92,11 @@ def agregar(request):
 
             # Verifica si el usuario ya existe
             if Usuario.objects.filter(id_rut=id_rut).exists():
-                print("DEBUG: RUT ya existe en la base de datos")  # Debug 5
+                logger.debug("DEBUG: RUT ya existe en la base de datos")
                 return render(request, "admin_usuario/agregar.html", {'error': 'El RUT ya está registrado.'})
 
             try:
-                print("\nDEBUG: Intentando crear Usuario...")  # Debug 6
+                logger.debug("\nDEBUG: Intentando crear Usuario...")
                 # Crea el usuario en tu modelo Usuario
                 usuario = Usuario.objects.create(
                     id_rut=id_rut,
@@ -104,9 +107,9 @@ def agregar(request):
                     correo=correo,
                     rol=request.POST['rol']
                 )
-                print("DEBUG: Usuario creado exitosamente:", usuario)  # Debug 7
+                logger.debug("DEBUG: Usuario creado exitosamente: %s", usuario)
 
-                print("\nDEBUG: Intentando crear User de Django...")  # Debug 8
+                logger.debug("\nDEBUG: Intentando crear User de Django...")
                 # Crea el usuario en el modelo User de Django (para autenticación)
                 user = User.objects.create_user(
                     username=id_rut,
@@ -115,17 +118,17 @@ def agregar(request):
                     first_name=request.POST['nombre'],
                     last_name=request.POST['apellido']
                 )
-                print("DEBUG: User de Django creado exitosamente:", user)  # Debug 9
+                logger.debug("DEBUG: User de Django creado exitosamente: %s", user)
 
                 return redirect('listar_usuarios')  # Redirige a la lista de usuarios
 
             except Exception as e:
-                print("\nDEBUG: Error al crear usuario:", str(e))  # Debug 10
+                logger.error("\nDEBUG: Error al crear usuario: %s", str(e))
                 return render(request, "admin_usuario/agregar.html", {'error': f'Ocurrió un error: {str(e)}'})
 
         else:
-            print("\nDEBUG: Faltan campos obligatorios")  # Debug 11
-            print("Campos recibidos:", {campo: request.POST.get(campo) for campo in campos})  # Debug 12
+            logger.debug("\nDEBUG: Faltan campos obligatorios")
+            logger.debug("Campos recibidos: %s", {campo: request.POST.get(campo) for campo in campos})
             return render(request, "admin_usuario/agregar.html", {'error': 'Todos los campos son obligatorios.'})
     
     return render(request, "admin_usuario/agregar.html") 

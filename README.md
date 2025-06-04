@@ -65,6 +65,7 @@ python manage.py migrate
 ## Servidor de desarrollo
 Con el entorno virtual activo y todo instalado, inicia el servidor con:
 ```bash
+python manage.py reset_db
 python manage.py runserver
 ```
 Visita `http://localhost:8000` para comprobar que la aplicación funciona.
