@@ -38,4 +38,5 @@ urlpatterns = [
     path('generar_encuesta/', views.generar_encuesta, name='generar_encuesta'),
     path('encuesta/<int:encuesta_id>/', views.ver_encuesta, name='ver_encuesta'),
     path('encuesta/<int:encuesta_id>/responder/', views.responder_encuesta, name='responder_encuesta'),
+    path('gestion/informes/', views.reportes, name='ver_informes'),
 ]
