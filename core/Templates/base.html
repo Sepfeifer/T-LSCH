@@ -1,28 +1,32 @@
+{# templates/base.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- … tus meta tags … -->
-  <title>{% block title %}Admin{% endblock %}</title>
-
-  {# 1. Incluimos Font Awesome desde CDN #}
-  <link
-    rel="stylesheet"
-    href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
-  >
-
-  {# 2. Cargamos tu stylesheet #}
+  <meta charset="UTF-8">
+  <title>{% block title %}Sistema{% endblock %}</title>
   <link href="{% static 'css/style.css' %}" rel="stylesheet">
-
   {% block extra_css %}{% endblock %}
 </head>
 <body>
-  {% if user.is_authenticated %}
-  <a href="{% url 'logout' %}" class="logout-btn">Cerrar sesión</a>
-{% endif %}
-  <div class="container">
+  <header>
+    {% if user.is_authenticated %}
+      <nav>
+        {% if user.is_superuser or user.es_administrador %}
+          <a href="{% url 'vista_admin' %}">Panel Admin</a>
+        {% endif %}
+        {% if user.es_funcionario %}
+          <a href="{% url 'vista_funcionario' %}">Panel Funcionario</a>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="logout-btn">Cerrar sesión</a>
+      </nav>
+    {% endif %}
+  </header>
+
+  <main class="container">
     {% block content %}{% endblock %}
-  </div>
+  </main>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>

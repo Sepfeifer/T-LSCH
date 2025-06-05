@@ -16,34 +16,44 @@ from .services.spacy_translator import  translate_to_lsch
 from .services.spacy_extractor import extract_keywords_spacy
 from .services.synonym_service import get_synonyms
 
+
+def es_admin(user):
+    return user.is_authenticated and (user.is_superuser or getattr(user, 'es_administrador', False))
+
+def es_funcionario(user):
+    return user.is_authenticated and getattr(user, 'es_funcionario', False)
+
+
 #Login  
 def login_view(request):
+    # Si ya está autenticado, redirige según rol:
     if request.user.is_authenticated:
-        if request.user.is_superuser or request.user.es_administrador:
+        # Si es admin, va a panel admin
+        if request.user.is_superuser or getattr(request.user, 'es_administrador', False):
             return redirect('vista_admin')
-        elif request.user.es_funcionario:
-            return redirect('vista_funcionario')
-        return redirect('home_visita')
-    
+        # Si no es admin, lo mandamos a vista_funcionario sin más comprobaciones
+        return redirect('vista_funcionario')
+
+    # Si es POST, chequea credenciales
     if request.method == 'POST':
         run = request.POST.get('run')
         password = request.POST.get('password')
         user = authenticate(request, username=run, password=password)
-        
+
         if user is not None:
             login(request, user)
-            if user.is_superuser or user.es_administrador:
+            # Después de loguearse, redirige según rol:
+            if user.is_superuser or getattr(user, 'es_administrador', False):
                 return redirect('vista_admin')
-            elif user.es_funcionario:
-                return redirect('vista_funcionario')
-            return redirect('home_visita')
+            # Cualquier otro usuario (funcionario o sin rol) irá a vista_funcionario:
+            return redirect('vista_funcionario')
         else:
-            return render(request, 'login/login.html', {
-                'error': 'RUN o contraseña incorrectos',
-                'run': run
-            })
-    
+            messages.error(request, 'RUN o contraseña incorrectos')
+            return render(request, 'login/login.html', {'run': run})
+
+    # GET normal, muestra el form de login
     return render(request, 'login/login.html')
+
 
 def logout_view(request):
     logout(request)
@@ -51,17 +61,21 @@ def logout_view(request):
 
 @login_required
 def vista_funcionario(request):
-    if not request.user.es_funcionario and not request.user.is_superuser:
-        return redirect('login')
+    # Ya no forzamos que el usuario tenga es_funcionario:
+    # simplemente mostramos la plantilla a cualquier usuario logueado
     return render(request, 'vista_funcionario.html')
+
+
+@login_required
+def vista_admin(request):
+    # Mantenemos la comprobación de solo administrador
+    if not (request.user.is_superuser or getattr(request.user, 'es_administrador', False)):
+        return redirect('login')
+    return render(request, 'vista_admin.html')
+
 
 def home_visita(request):
     return render(request, "home_visita.html")
-
-#ADMIN_VISTA    
-def vista_admin(request):
-    
-    return render(request, 'vista_admin.html')
 
 # USUARIOS
 def listar(request):
