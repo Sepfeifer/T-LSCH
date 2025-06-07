@@ -15,6 +15,7 @@ from django.contrib.auth.hashers import make_password
 from .services.spacy_translator import  translate_to_lsch
 from .services.spacy_extractor import extract_keywords_spacy
 from .services.synonym_service import get_synonyms
+from .services.informe_service import registrar_video
 
 
 def es_admin(user):
@@ -397,7 +398,15 @@ def ver_encuesta(request, tramite_id):
     """
     tramite = get_object_or_404(Tramite, id=tramite_id)
     encuesta = tramite.encuesta  # Puede ser None si aún no se creó
-    playlist = tramite.playlist if (encuesta and tramite.playlist) else []  # Solo mostrar playlist si la encuesta existe
+    playlist = (
+        tramite.playlist if (encuesta and tramite.playlist) else []
+    )  # Solo mostrar playlist si la encuesta existe
+
+    if playlist:
+        for item in playlist:
+            video = Video.objects.filter(nombre=item.get("titulo")).first()
+            if video:
+                registrar_video(video)
 
     return render(request, "usuario/ver_encuesta.html", {
         "tramite": tramite,
