@@ -23,6 +23,7 @@ import io
 from weasyprint import HTML
 
 
+
 def es_admin(user):
     return user.is_authenticated and (user.is_superuser or getattr(user, 'es_administrador', False))
 
@@ -403,7 +404,15 @@ def ver_encuesta(request, tramite_id):
     """
     tramite = get_object_or_404(Tramite, id=tramite_id)
     encuesta = tramite.encuesta  # Puede ser None si aún no se creó
-    playlist = tramite.playlist if (encuesta and tramite.playlist) else []  # Solo mostrar playlist si la encuesta existe
+    playlist = (
+        tramite.playlist if (encuesta and tramite.playlist) else []
+    )  # Solo mostrar playlist si la encuesta existe
+
+    if playlist:
+        for item in playlist:
+            video = Video.objects.filter(nombre=item.get("titulo")).first()
+            if video:
+                registrar_video(video)
 
     return render(request, "usuario/ver_encuesta.html", {
         "tramite": tramite,

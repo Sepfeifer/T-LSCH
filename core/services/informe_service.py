@@ -38,3 +38,4 @@ def obtener_totales(desde=None, hasta=None):
     semanal = df.groupby(["tema", "semana"]).size().reset_index(name="total")
     mensual = df.groupby(["tema", "mes"]).size().reset_index(name="total")
     return {"diario": diario, "semanal": semanal, "mensual": mensual}
+
