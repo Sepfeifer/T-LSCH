@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link href="{% static 'css/lista.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="right_col" role="main">
+  <h1>Informes por Tema</h1>
+  <form method="get" style="margin-bottom:20px;">
+    <label>Desde: <input type="date" name="desde" value="{{ desde }}"></label>
+    <label>Hasta: <input type="date" name="hasta" value="{{ hasta }}"></label>
+    <button type="submit" class="btn btn-add">Filtrar</button>
+    <button type="submit" name="pdf" value="1" class="btn btn-edit">PDF</button>
+    <button type="submit" name="excel" value="1" class="btn btn-edit">Excel</button>
+  </form>
+
+  <h2>Diario</h2>
+  <table class="user-table">
+    <thead><tr><th>Tema</th><th>Fecha</th><th>Total</th></tr></thead>
+    <tbody>
+    {% for row in datos.diario %}
+      <tr><td>{{ row.tema }}</td><td>{{ row.fecha }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Semanal</h2>
+  <table class="user-table">
+    <thead><tr><th>Tema</th><th>Semana</th><th>Total</th></tr></thead>
+    <tbody>
+    {% for row in datos.semanal %}
+      <tr><td>{{ row.tema }}</td><td>{{ row.semana }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Mensual</h2>
+  <table class="user-table">
+    <thead><tr><th>Tema</th><th>Mes</th><th>Total</th></tr></thead>
+    <tbody>
+    {% for row in datos.mensual %}
+      <tr><td>{{ row.tema }}</td><td>{{ row.mes }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
