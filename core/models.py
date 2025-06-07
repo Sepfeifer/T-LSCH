@@ -120,3 +120,14 @@ class Tramite(models.Model):
 
     def __str__(self):
         return f"Trámite #{self.id}: {self.frase_original[:30]}…"
+
+
+class Informe(models.Model):
+    """Registro diario de videos subidos por tema."""
+
+    tema = models.ForeignKey(Tema, on_delete=models.CASCADE, related_name='informes')
+    contador = models.PositiveIntegerField(default=0)
+    fecha = models.DateField()
+
+    def __str__(self):
+        return f"{self.tema.nombre} - {self.fecha}: {self.contador}"
