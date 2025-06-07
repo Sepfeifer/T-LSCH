@@ -34,4 +34,6 @@ urlpatterns = [
     path('funcionario/', login_required(views.vista_funcionario), name='vista_funcionario'),
     path('funcionario/traductor/', login_required(views.traductor), name='traductor'),
     path('tramite/<int:tramite_id>/crear_encuesta/', login_required(views.crear_encuesta), name='crear_encuesta'),
+
+    path('informes/', views.informe_list, name='informes'),
 ]
