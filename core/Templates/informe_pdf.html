@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 6px; font-size: 12px; }
+    th { background: #f2f2f2; }
+</style>
+</head>
+<body>
+<h1>Informe</h1>
+<h2>Diario</h2>
+<table>
+    <thead>
+        <tr><th>Tema</th><th>Fecha</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+    {% for row in datos.diario %}
+        <tr><td>{{ row.tema }}</td><td>{{ row.fecha }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+        <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h2>Semanal</h2>
+<table>
+    <thead>
+        <tr><th>Tema</th><th>Semana</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+    {% for row in datos.semanal %}
+        <tr><td>{{ row.tema }}</td><td>{{ row.semana }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+        <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h2>Mensual</h2>
+<table>
+    <thead>
+        <tr><th>Tema</th><th>Mes</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+    {% for row in datos.mensual %}
+        <tr><td>{{ row.tema }}</td><td>{{ row.mes }}</td><td>{{ row.total }}</td></tr>
+    {% empty %}
+        <tr><td colspan="3">No hay datos</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
