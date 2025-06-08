@@ -36,4 +36,5 @@ urlpatterns = [
     path('tramite/<int:tramite_id>/crear_encuesta/', login_required(views.crear_encuesta), name='crear_encuesta'),
 
     path('informes/', views.informe_list, name='informes'),
+    path('informes/pdf/', views.generar_pdf, name='generar_pdf'),
 ]

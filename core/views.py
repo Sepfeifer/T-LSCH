@@ -16,12 +16,21 @@ from .services.spacy_translator import  translate_to_lsch
 from .services.spacy_extractor import extract_keywords_spacy
 from .services.synonym_service import get_synonyms
 from .services import informe_service
-from django.template.loader import render_to_string
+from django.template.loader import get_template, render_to_string
 from django.utils.dateparse import parse_date
 import pandas as pd
 import io
-from weasyprint import HTML
+from xhtml2pdf import pisa
 
+
+def render_to_pdf(template_src, context_dict):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=result)
+    if pisa_status.err:
+        return None
+    return result.getvalue()
 
 
 def es_admin(user):
@@ -460,10 +469,21 @@ def informe_list(request):
         return response
 
     if 'pdf' in request.GET:
-        html_string = render_to_string('informes.html', {'datos': datos_render, 'request': request})
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
-        response = HttpResponse(pdf_file, content_type='application/pdf')
+        pdf_content = render_to_pdf('informe_pdf.html', {'datos': datos_render})
+        response = HttpResponse(pdf_content, content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="informes.pdf"'
         return response
 
     return render(request, 'informes.html', {'datos': datos_render, 'desde': desde_txt, 'hasta': hasta_txt})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def generar_pdf(request):
+    desde_txt = request.GET.get('desde')
+    hasta_txt = request.GET.get('hasta')
+    desde = parse_date(desde_txt) if desde_txt else None
+    hasta = parse_date(hasta_txt) if hasta_txt else None
+    datos = informe_service.obtener_totales(desde, hasta)
+    datos_render = {k: v.to_dict(orient='records') for k, v in datos.items()}
+    pdf_content = render_to_pdf('informe_pdf.html', {'datos': datos_render})
+    return HttpResponse(pdf_content, content_type='application/pdf')
