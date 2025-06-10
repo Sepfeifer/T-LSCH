@@ -6,181 +6,8 @@
 
 {% block extra_css %}
   <link href="{% static 'css/funcionario.css' %}" rel="stylesheet">
-  <style>
-    /* ================= CONTENEDOR PRINCIPAL ================= */
-    .traductor-container {
-      max-width: 900px;
-      margin: 40px auto;
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-    }
-    .mensaje-sin-tramite {
-      text-align: center;
-      color: #aa0000;
-      font-weight: 600;
-      margin-top: 80px;
-    }
-    .consulta-mje {
-      background: #e0f2fe;
-      color: #003366;
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      font-size: 1rem;
-    }
-    .traductor-textarea {
-      width: 100%;
-      height: 120px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      resize: none;
-      box-sizing: border-box;
-      background: #f9f9f9;
-    }
-    .traductor-button {
-      margin-top: 15px;
-      padding: 12px 25px;
-      background: #003366;
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s;
-    }
-    .traductor-button:hover {
-      background: #002244;
-    }
-    .resultados {
-      margin-top: 30px;
-    }
-    .result-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .result-list li {
-      background: #f8f9fa;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      color: #003366;
-    }
-    .btn-crear-encuesta {
-      margin-top: 25px;
-      padding: 12px 25px;
-      background: #ffaa00;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    .btn-crear-encuesta:hover {
-      background: #ff8800;
-    }
-    .btn-refrescar {
-      margin-top: 15px;
-      padding: 8px 16px;
-      background: #ffaa00;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .btn-refrescar:hover {
-      background: #ff8800;
-    }
+  <link href="{% static 'css/traductor.css' %}" rel="stylesheet">
 
-    /* ================= REPRODUCTORES (HTML5 + YT) ================ */
-    #playerHTML5, #playerYT {
-      width: 100%;
-      max-width: 800px;
-      height: 450px;
-      background: #000;
-      margin: 0 auto 20px auto;
-    }
-    #playerHTML5 {
-      display: none;  /* Solo si es MP4 local */
-    }
-    #playerYT {
-      display: none;  /* Solo si es YouTube */
-    }
-    .btn-reiniciar {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 8px 16px;
-      background: #003366;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-reiniciar:hover {
-      background: #002244;
-    }
-
-    /* ================ SECCIÓN DE ENCUESTA FUNCIONARIO ================ */
-    #encuestaSection {
-      margin-top: 30px;
-      padding: 20px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      display: none; /* Arranca oculta */
-    }
-    #encuestaSection h3 {
-      color: #003366;
-      margin-bottom: 15px;
-    }
-    .encuesta-input {
-      width: 100%;
-      max-width: 400px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      margin-top: 10px;
-      box-sizing: border-box;
-    }
-    #btnAgregarOpcion {
-      margin-top: 15px;
-      padding: 8px 16px;
-      background: #ffaa00;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s;
-    }
-    #btnAgregarOpcion:hover {
-      background: #ff8800;
-    }
-    #btnGenerarEncuesta {
-      margin-top: 20px;
-      padding: 12px 25px;
-      background: #003366;
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s;
-    }
-    #btnGenerarEncuesta:hover {
-      background: #002244;
-    }
-    /* ================ FIN SECCIÓN ENCUESTA ====================== */
-  </style>
 {% endblock %}
 
 {% block content %}
@@ -230,23 +57,49 @@
         <button type="submit" class="traductor-button">Generar Traducción</button>
       </form>
 
-      {# == 4. Si ya existe playlist, mostrar lista de coincidencias == #}
-      {% if playlist %}
-        <div class="resultados">
-          <h4 style="color: #003366;">Palabras encontradas y títulos de videos:</h4>
+     {# == 4. Si ya existe playlist, mostrar lista de coincidencias == #}
+{% if playlist %}
+  <div class="resultados">
+    <h4 style="color: #003366;">Palabras encontradas y títulos de videos:</h4>
+    <ul class="result-list">
+      {% for token, titulo in matches.items %}
+        <li>{{ token }} ➔ {{ titulo }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {# Mostrar errores de videos no encontrados #}
+   {# ←── Aquí insertas este bloque justo debajo ──→ #}
+        <div class="resultados" style="margin-top:20px;">
+          <h4 style="color: #aa0000;">Videos no encontrados:</h4>
           <ul class="result-list">
-            {% for token, titulo in matches.items %}
-              <li>{{ token }} ➔ {{ titulo }}</li>
+            {% for item in playlist %}
+              {% if item.error %}
+                <li style="color: red;
+                           background: #ffe6e6;
+                           border-left: 4px solid #cc0000;
+                           padding:8px;
+                           margin-bottom:4px;">
+                  ❌ <strong>{{ item.titulo }}</strong> – sin video disponible
+                  <a href="{% url 'reportar_video_faltante' %}?keyword={{ item.titulo|urlencode }}"
+                     class="btn btn-warning btn-sm"
+                     style="margin-left:10px;">
+                    Reportar falta de vídeo
+                  </a>
+                </li>
+              {% endif %}
             {% endfor %}
           </ul>
         </div>
-        {# == 5. Mostrar reproductores y botón “Reiniciar Secuencia” == #}
-        <div style="margin-top: 30px; text-align: center;">
-          <video id="playerHTML5" controls></video>
-          <div id="playerYT"></div>
-          <button id="btnReiniciar" class="btn-reiniciar">Reiniciar Secuencia</button>
-        </div>
-      {% endif %}
+
+  {# == 5. Mostrar reproductores y botón “Reiniciar Secuencia” == #}
+  <div style="margin-top: 30px; text-align: center;">
+    <video id="playerHTML5" controls></video>
+    <div id="playerYT"></div>
+    <button id="btnReiniciar" class="btn-reiniciar">Reiniciar Secuencia</button>
+  </div>
+{% endif %}
+
 
       {# == 6. Botón “Crear Encuesta” solo si hay playlist y aún no existe encuesta == #}
       {% if playlist and not tramite.encuesta %}

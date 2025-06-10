@@ -2,32 +2,72 @@ import re
 import spacy
 from spacy.matcher import PhraseMatcher
 
-# Carga el modelo de spaCy (modelo español)
 _nlp = spacy.load("es_core_news_sm")
 
-# Lista de expresiones compuestas que quieres detectar como una sola unidad
-_MULTI_WORDS = ["por favor", "dedo índice", "acta de nacimiento", "carnet", "rut"]
+_MULTI_WORDS = [
+    # existentes
+    "por favor",
+    "dedo índice",
+    "acta de nacimiento",
+    "carnet",
+    "rut",
+    "$3500",
+    "3500",
+    # nuevas dos-palabras (espacio)
+    "Registro civil",
+    "Firmar aqui",
+    "Cuatro Semanas",
+    "Bloquear Carnet",
+    "Entrar a internet",
+    # nuevas unidas por "_"
+    "Poner_Huella",
+    "Entregar documento",
+    "Dos Semanas",
+    "Documento de defunción",
+    "Acta de nacimiento",
+    "acta de nacimiento donde",
+    "Una Semana",
+    "Cómo estas",
+    # nuevas variantes monetarias
+    "3.500",
+    "3,500",
+]
 
-# Configura PhraseMatcher para capturar estos _MULTI_WORDS
 _matcher = PhraseMatcher(_nlp.vocab, attr="LOWER")
 _patterns = [_nlp.make_doc(text) for text in _MULTI_WORDS]
 _matcher.add("COMPOUND", _patterns)
 
+SALUDOS = {"hola"}
+VERBOS_DUDOSOS = {"ser", "estar", "haber", "tener", "hacer", "poder", "esperar", "decir"}
+INTERROGATIVOS = {"qué", "quién", "quienes", "cual", "cuales", "como", "cuando", "donde", "por qué", "cuanto", "cuantos"}
+NUMEROS_PALABRAS = {
+    "0": "cero", "1": "uno", "2": "dos", "3": "tres", "4": "cuatro",
+    "5": "cinco", "6": "seis", "7": "siete", "8": "ocho", "9": "nueve"
+}
+
+
+def es_verbo_relevante(tok):
+    """Permite verbos dudosos solo si tienen sujeto o complemento."""
+    if tok.lemma_ not in VERBOS_DUDOSOS:
+        return True
+    hijos = [h.dep_ for h in tok.children]
+    return "obj" in hijos or "nsubj" in hijos
+
 
 def extract_keywords_spacy(text: str) -> list[str]:
     """
-    Extrae términos en el orden en que aparecen en el texto:
-      1) Palabras entre "comillas" → deletreados (si existen).
-      2) Expresiones compuestas definidas en _MULTI_WORDS.
-      3) Verbos (VERB) y Sustantivos (NOUN) (en forma de lematizado).
-    Sólo devuelve cada término una sola vez, manteniendo el orden original.
-    Devuelve una lista de strings (keywords).
+    Extrae términos clave en orden desde el texto:
+      1) Deletreos entre comillas.
+      2) Compuestos (palabras múltiples).
+      3) Interrogativos y saludos.
+      4) Sustantivos, verbos relevantes e interjecciones.
+      5) Dígitos o números escritos.
     """
     seen = set()
     result = []
 
-    # 1) Detectar palabras entre comillas
-    for m in re.finditer(r'"([^"]+)"', text):
+    # 1) Deletreos entre comillas
+    for m in re.finditer(r'"([^\"]+)"', text):
         name = m.group(1)
         start = m.start()
         spelled = "-".join(name.replace(" ", "").upper())
@@ -35,42 +75,65 @@ def extract_keywords_spacy(text: str) -> list[str]:
             seen.add(spelled)
             result.append((start, spelled))
 
-    # 2) Remover fragmentos entre comillas para procesar con spaCy
-    cleaned = re.sub(r'"[^"]+"', " ", text)
+    # 2) Texto sin comillas, limpio de signos solo al final de palabras
+    cleaned = re.sub(r'"[^\"]+"', " ", text)
+    cleaned = re.sub(r'[^\w\s$]', '', cleaned)  # quita signos pero conserva "$" y espacios
     doc = _nlp(cleaned)
 
-    # 3) Detectar expresiones compuestas (_MULTI_WORDS) con PhraseMatcher
-    matches = [
-        (start, end, doc[start:end].text.lower())
-        for _, start, end in _matcher(doc)
-    ]
-    comp_spans = []
-    for start, end, span_text in matches:
-        char_start = doc[start].idx
-        if span_text not in seen:
-            seen.add(span_text)
-            comp_spans.append((char_start, span_text, start, end))
+    # 3) Detectar compuestos
+    matches = [(s, e, doc[s:e].text.lower()) for _, s, e in _matcher(doc)]
+    comp_index = {}
+    for s, e, text_m in matches:
+        idx = doc[s].idx
+        if text_m not in seen:
+            seen.add(text_m)
+            result.append((idx, text_m.replace(" ", "_")))
+            comp_index.update({i: True for i in range(s, e)})
 
-    # Crear un índice (token index → (end_index, texto)) para saltar compuestos
-    comp_index = {start: (end, text) for _, text, start, end in comp_spans}
-
-    # 4) Recorrer tokens, saltando compuestos y agregando VERB/NOUN lematizados
-    i = 0
-    while i < len(doc):
+    # 4) Resto del análisis
+    for i, tok in enumerate(doc):
         if i in comp_index:
-            end, span_text = comp_index[i]
-            result.append((doc[i].idx, span_text))
-            i = end
-            continue
+            continue  # ya se incluyó como parte de una expresión compuesta
 
-        tok = doc[i]
-        if tok.pos_ in ("VERB", "NOUN"):
+        txt = tok.text.lower().strip("¿?")
+
+        if txt in INTERROGATIVOS or txt in SALUDOS:
+            if txt not in seen:
+                seen.add(txt)
+                result.append((tok.idx, txt))
+
+        elif tok.pos_ == "INTJ" and txt not in seen:
+            seen.add(txt)
+            result.append((tok.idx, txt))
+
+        elif tok.pos_ == "NOUN":
             lemma = tok.lemma_.lower()
-            if lemma not in seen:
+            if lemma not in seen and len(lemma) > 2:
                 seen.add(lemma)
                 result.append((tok.idx, lemma))
-        i += 1
 
-    # 5) Ordenar por posición de ocurrencia (primer campo de cada tupla)
-    ordered = [term for _, term in sorted(result, key=lambda x: x[0])]
-    return ordered
+        elif tok.pos_ == "VERB":
+            lemma = tok.lemma_.lower()
+            if lemma not in seen and len(lemma) > 2 and es_verbo_relevante(tok):
+                seen.add(lemma)
+                result.append((tok.idx, lemma))
+
+    # 5) Dígitos como palabras
+    for m in re.finditer(r'\d+', text):
+        inicio = m.start()
+        for d in m.group():
+            palabra = NUMEROS_PALABRAS.get(d)
+            if palabra and palabra not in seen:
+                seen.add(palabra)
+                result.append((inicio, palabra))
+
+    # 6) Números escritos como texto
+    for tok in doc:
+        palabra = tok.text.lower()
+        if palabra in NUMEROS_PALABRAS.values() and palabra not in seen:
+            seen.add(palabra)
+            result.append((tok.idx, palabra))
+
+    # 7) Orden final limpio por posición real
+    final = [texto for _, texto in sorted(result, key=lambda x: x[0])]
+    return final

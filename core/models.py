@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 # Create your models here.
 
 class UsuarioManager(BaseUserManager):
@@ -9,12 +10,13 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('es_administrador', True)
-        
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        return self._create_user(id_rut, email, nombre, apellido, password, **extra_fields)
 
+    def create_user(self, id_rut, email, nombre, apellido, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault('es_administrador', False)
+        extra_fields.setdefault('es_funcionario', True)
         return self._create_user(id_rut, email, nombre, apellido, password, **extra_fields)
 
     def _create_user(self, id_rut, email, nombre, apellido, password, **extra_fields):
@@ -31,6 +33,7 @@ class UsuarioManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
 
 class Usuario(AbstractUser):
     username = None
@@ -123,11 +126,25 @@ class Tramite(models.Model):
 
 
 class Informe(models.Model):
-    """Registro diario de videos subidos por tema."""
-
     tema = models.ForeignKey(Tema, on_delete=models.CASCADE, related_name='informes')
-    contador = models.PositiveIntegerField(default=0)
+    cantidad = models.PositiveIntegerField(default=0)  
     fecha = models.DateField()
 
     def __str__(self):
-        return f"{self.tema.nombre} - {self.fecha}: {self.contador}"
+        return f"{self.tema.nombre} - {self.fecha}: {self.cantidad}"
+
+class MissingVideoReport(models.Model):
+    keyword       = models.CharField("Palabra clave", max_length=200)
+    reported_by   = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                      on_delete=models.CASCADE,
+                                      verbose_name="Reportado por")
+    created_at    = models.DateTimeField(auto_now_add=True)
+    resolved      = models.BooleanField("Resuelto", default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Reporte de vídeo faltante"
+        verbose_name_plural = "Reportes de vídeos faltantes"
+
+    def __str__(self):
+        return f"{self.keyword} → {self.reported_by} ({'resuelto' if self.resolved else 'pendiente'})"

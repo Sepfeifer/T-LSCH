@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notificaciones – Reportes de Video{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Reportes de vídeos faltantes</h2>
+  {% if reportes %}
+    <ul class="list-group mt-3">
+      {% for rpt in reportes %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ rpt.keyword }}</strong>
+            <small class="text-muted">reportado por {{ rpt.reported_by }} el {{ rpt.created_at|date:"SHORT_DATETIME_FORMAT" }}</small>
+          </div>
+          <a href="{% url 'marcar_resuelto' rpt.pk %}" class="btn btn-sm btn-success">
+            Marcar resuelto
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info mt-3">
+      No hay reportes pendientes.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

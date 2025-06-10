@@ -13,13 +13,6 @@
   <header>
     {% if user.is_authenticated %}
       <nav>
-        {% if user.is_superuser or user.es_administrador %}
-          <a href="{% url 'vista_admin' %}">Panel Admin</a>
-          <a href="{% url 'informes' %}">Informes</a>
-        {% endif %}
-        {% if user.es_funcionario %}
-          <a href="{% url 'vista_funcionario' %}">Panel Funcionario</a>
-        {% endif %}
         <a href="{% url 'logout' %}" class="logout-btn">Cerrar sesión</a>
       </nav>
     {% endif %}

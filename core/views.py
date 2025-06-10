@@ -8,19 +8,24 @@ User = get_user_model()
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail  # ← AÑADIDO
 from django.conf import settings         # ← AÑADIDO
-from .models import Usuario, Video, Tema, Encuesta, Opcion, Tramite
+from .models import Usuario, Video, Tema, Encuesta, Opcion, Tramite, MissingVideoReport
 from .forms import VideoForm
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
 from .services.spacy_translator import  translate_to_lsch
 from .services.spacy_extractor import extract_keywords_spacy
-from .services.synonym_service import get_synonyms
 from .services import informe_service
 from django.template.loader import get_template, render_to_string
 from django.utils.dateparse import parse_date
 import pandas as pd
 import io
+from core.services.informe_service import obtener_totales
 from xhtml2pdf import pisa
+from core.services.synonym_service import get_synonyms
+from collections import OrderedDict
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+
 
 
 def render_to_pdf(template_src, context_dict):
@@ -33,6 +38,7 @@ def render_to_pdf(template_src, context_dict):
     return result.getvalue()
 
 
+
 def es_admin(user):
     return user.is_authenticated and (user.is_superuser or getattr(user, 'es_administrador', False))
 
@@ -40,35 +46,35 @@ def es_funcionario(user):
     return user.is_authenticated and getattr(user, 'es_funcionario', False)
 
 
-#Login  
+# Login
 def login_view(request):
     # Si ya está autenticado, redirige según rol:
     if request.user.is_authenticated:
-        # Si es admin, va a panel admin
-        if request.user.is_superuser or getattr(request.user, 'es_administrador', False):
+        if es_admin(request.user):
             return redirect('vista_admin')
-        # Si no es admin, lo mandamos a vista_funcionario sin más comprobaciones
         return redirect('vista_funcionario')
 
+    # Si es GET, limpiamos cualquier mensaje previo y mostramos el formulario
+    if request.method == 'GET':
+        # Iterar el storage vacía todos los mensajes existentes
+        list(messages.get_messages(request))
+        return render(request, 'login/login.html')
+
     # Si es POST, chequea credenciales
-    if request.method == 'POST':
-        run = request.POST.get('run')
-        password = request.POST.get('password')
-        user = authenticate(request, username=run, password=password)
+    run = request.POST.get('run')
+    password = request.POST.get('password')
+    user = authenticate(request, username=run, password=password)
 
-        if user is not None:
-            login(request, user)
-            # Después de loguearse, redirige según rol:
-            if user.is_superuser or getattr(user, 'es_administrador', False):
-                return redirect('vista_admin')
-            # Cualquier otro usuario (funcionario o sin rol) irá a vista_funcionario:
-            return redirect('vista_funcionario')
-        else:
-            messages.error(request, 'RUN o contraseña incorrectos')
-            return render(request, 'login/login.html', {'run': run})
-
-    # GET normal, muestra el form de login
-    return render(request, 'login/login.html')
+    if user is not None:
+        login(request, user)
+        # Después de loguearse, redirige según rol:
+        if es_admin(user):
+            return redirect('vista_admin')
+        return redirect('vista_funcionario')
+    else:
+        messages.error(request, 'RUN o contraseña incorrectos')
+        # Re-render con el run para que no lo pierda el usuario
+        return render(request, 'login/login.html', {'run': run})
 
 
 def logout_view(request):
@@ -279,7 +285,7 @@ def eliminar_video(request, video_id):
 
 def usuario_consulta(request):
     """
-    Vista pública donde el usuario sordo-mudo envía su texto de consulta.
+    Vista pública donde el usuario sordo envía su texto de consulta.
     - Si es GET, muestra el formulario.
     - Si es POST, lee 'frase' del formulario, crea un Tramite(frase_original=…) y redirige
       a la página de esa misma consulta para ver playlist+encuesta.
@@ -293,88 +299,114 @@ def usuario_consulta(request):
     return render(request, "usuario/consulta.html")
 
 
+
+@login_required
 def traductor(request):
-    """
-    Vista que el funcionario usa para:
-    - Mostrar la última consulta recibida (si existe).
-    - Aceptar la respuesta en texto (POST) para generar playlist.
-    - Botón “Refrescar” para recargar y verificar nueva consulta.
-    """
-    # 1) Recuperar el trámite más reciente (si hay) que aún no tenga encuesta creada.
-    #    De este modo, el funcionario ve siempre el último que falta atención.
     ultimo_tramite = Tramite.objects.order_by('-creado_en').first()
-    frase = ""
+    matches = OrderedDict()  # Mantiene el orden original
     playlist = []
-    matches = {}
 
-    if ultimo_tramite:
-        frase = ultimo_tramite.frase_original
+    if request.method == "POST":
+        texto_respuesta = request.POST.get("frase_traductor", "").strip()
+        tokens = []
+        deletreados = {}
 
-        if request.method == "POST":
-            # Si llega un POST de “Generar Traducción”
-            texto_respuesta = request.POST.get("frase_traductor", "").strip()
-            if texto_respuesta:
-                # Extraer tokens / palabras para buscar videos
-                tokens = []
-                for m in re.finditer(r'"([^"]+)"|(\S+)', texto_respuesta):
-                    if m.group(1) is not None:
-                        # Dentro de comillas → deletrear
-                        for ch in m.group(1):
-                            if ch.strip():
-                                tokens.append(ch.lower())
-                    else:
-                        tokens.append(m.group(2).lower())
+        # 1. Deletrear palabras entre comillas
+        for match in re.finditer(r'"([^"]+)"', texto_respuesta):
+            palabra = match.group(1)
+            letras = [c.lower() for c in palabra if c.isalpha()]
+            tokens.extend(letras)
+            deletreados[palabra.lower()] = [l.upper() for l in letras]
 
-                # Construir playlist en el mismo orden
-                lista_videos = []
-                for token in tokens:
-                    # 1) Buscar video por nombre exacto o parcial
-                    video = Video.objects.filter(nombre__iexact=token).first() \
-                            or Video.objects.filter(nombre__icontains=token).first()
-                    # 2) Si no hay, buscar sinónimo
-                    if not video:
-                        for syn in get_synonyms(token):
-                            video = Video.objects.filter(nombre__icontains=syn).first()
-                            if video:
-                                break
-                    # 3) Si encuentra, convertir a embed o URL directa
+        # 2. Limpiar texto
+        texto_limpio = re.sub(r'[¿?¡!.,;:\n\r]', '', texto_respuesta.lower())
+        texto_limpio = re.sub(r'\s+', ' ', texto_limpio.strip())
+
+        # 3. Extraer keywords con spaCy
+        keywords = extract_keywords_spacy(texto_limpio)
+        tokens_spacy = [k.strip().replace(" ", "_").lower() for k in keywords]
+        tokens.extend(tokens_spacy)
+
+        # 4. Eliminar sub-palabras si ya hay multi-palabras
+        compuestos = [t for t in tokens if "_" in t]
+        simples = [
+            t for t in tokens
+            if "_" not in t and not any(t in c.split("_") for c in compuestos)
+        ]
+        tokens = compuestos + simples
+
+        # 5. Buscar videos por cada token
+        for token in tokens:
+            token_limpio = token.strip().lower()
+            if not token_limpio:
+                continue
+
+            # Ignorar deletreos tipo G-A-B-R-I-E-L-A
+            if "-" in token and all(len(p) == 1 for p in token.split("-")):
+                continue
+
+            # Ignorar números puros, ya fueron convertidos a palabras
+            if token_limpio.isdigit():
+                continue
+
+            token_busqueda = token_limpio.upper() if len(token_limpio) == 1 else token_limpio
+            video = Video.objects.filter(nombre__iexact=token_busqueda).first()
+
+            if not video:
+                for syn in get_synonyms(token_busqueda):
+                    video = Video.objects.filter(nombre__iexact=syn.lower()).first()
                     if video:
-                        url = video.url_codigo.strip()
-                        if "youtube.com" in url or "youtu.be" in url:
-                            video_id = None
-                            if "watch?v=" in url:
-                                video_id = url.split("watch?v=")[1].split("&")[0]
-                            elif "youtu.be/" in url:
-                                video_id = url.split("youtu.be/")[1].split("?")[0]
-                            embed = f"https://www.youtube.com/embed/{video_id}?enablejsapi=1&autoplay=1" if video_id else url
-                            lista_videos.append({
-                                "titulo": video.nombre,
-                                "url": embed,
-                                "is_youtube": True
-                            })
-                        else:
-                            lista_videos.append({
-                                "titulo": video.nombre,
-                                "url": video.url_codigo,
-                                "is_youtube": False
-                            })
-                        # Guardar coincidencia para mostrar en lista
-                        matches[token] = video.nombre
+                        break
 
-                # 4) Guardar playlist en el propio trámite
-                ultimo_tramite.playlist = lista_videos
-                ultimo_tramite.save()
+            if video:
+                url = video.url_codigo.strip()
+                if "watch?v=" in url or "youtu.be" in url:
+                    vid = (
+                        url.split("watch?v=")[-1]
+                        if "watch?v=" in url
+                        else url.split("youtu.be/")[-1]
+                    ).split("&")[0]
+                    embed = f"https://www.youtube.com/embed/{vid}?enablejsapi=1&autoplay=1"
+                    playlist.append({
+                        "titulo": token,
+                        "url": embed,
+                        "is_youtube": True
+                    })
+                else:
+                    playlist.append({
+                        "titulo": token,
+                        "url": url,
+                        "is_youtube": False
+                    })
+                matches[token] = video.nombre
+            else:
+                matches[token] = f"{token_busqueda} (no encontrado)"
+                playlist.append({
+                    "titulo": token_busqueda,
+                    "url": "#",
+                    "is_youtube": False,
+                    "error": True
+                })
 
-                # NOTA: NO REDIRIGIMOS aquí; el funcionario se queda en la misma página.
-                # Al recargar manualmente, verá confirmación o lista de coincidencias.
+        # 6. Mostrar deletreos al final
+        for palabra, letras in deletreados.items():
+            matches[palabra] = " → ".join(letras)
+
+        # 7. Guardar en el trámite
+        if ultimo_tramite:
+            ultimo_tramite.playlist = playlist
+            ultimo_tramite.save()
 
     context = {
-        "frase": frase,
+        "frase": ultimo_tramite.frase_original if ultimo_tramite else "",
         "playlist": ultimo_tramite.playlist if ultimo_tramite else [],
         "matches": matches,
         "tramite": ultimo_tramite
     }
     return render(request, "funcionario/traductor.html", context)
+
+
+
 
 
 def crear_encuesta(request, tramite_id):
@@ -407,7 +439,7 @@ def crear_encuesta(request, tramite_id):
 
 def ver_encuesta(request, tramite_id):
     """
-    Vista pública para que el usuario sordo-mudo vea la playlist + encuesta.
+    Vista pública para que el usuario sordo vea la playlist + encuesta.
     - Si la encuesta NO existe aún, solo muestra mensaje de “espera”. 
     - Solo si existe encuesta Y playlist, permite reproducir videos y votar.
     """
@@ -421,7 +453,7 @@ def ver_encuesta(request, tramite_id):
         for item in playlist:
             video = Video.objects.filter(nombre=item.get("titulo")).first()
             if video:
-                registrar_video(video)
+                obtener_totales(video)
 
     return render(request, "usuario/ver_encuesta.html", {
         "tramite": tramite,
@@ -447,7 +479,6 @@ def responder_encuesta(request, tramite_id):
     return redirect('ver_encuesta_usuario', tramite_id=tramite_id)
 
 
-@user_passes_test(lambda u: u.is_superuser)
 def informe_list(request):
     desde_txt = request.GET.get('desde')
     hasta_txt = request.GET.get('hasta')
@@ -477,7 +508,6 @@ def informe_list(request):
     return render(request, 'informes.html', {'datos': datos_render, 'desde': desde_txt, 'hasta': hasta_txt})
 
 
-@user_passes_test(lambda u: u.is_superuser)
 def generar_pdf(request):
     desde_txt = request.GET.get('desde')
     hasta_txt = request.GET.get('hasta')
@@ -487,3 +517,36 @@ def generar_pdf(request):
     datos_render = {k: v.to_dict(orient='records') for k, v in datos.items()}
     pdf_content = render_to_pdf('informe_pdf.html', {'datos': datos_render})
     return HttpResponse(pdf_content, content_type='application/pdf')
+
+@login_required
+@user_passes_test(es_admin)
+def notificaciones(request):
+    # sólo pendientes
+    reportes = MissingVideoReport.objects.filter(resolved=False).order_by('-created_at')
+    return render(request, 'notificaciones.html', {
+        'reportes': reportes,
+    })
+
+@login_required
+@user_passes_test(es_admin)
+def marcar_resuelto(request, pk):
+    reporte = get_object_or_404(MissingVideoReport, pk=pk)
+    reporte.resolved = True
+    reporte.save()
+    return redirect('notificaciones')
+
+@login_required
+def reportar_video_faltante(request):
+    keyword = request.GET.get('keyword')
+    if keyword:
+        # Evitamos duplicados abiertos
+        existe = MissingVideoReport.objects.filter(keyword=keyword, resolved=False).exists()
+        if not existe:
+            MissingVideoReport.objects.create(
+                keyword=keyword,
+                reported_by=request.user
+            )
+            messages.success(request, f"Se ha reportado falta de vídeo para “{keyword}”.")
+        else:
+            messages.info(request, f"Ya existe un reporte pendiente para “{keyword}”.")
+    return redirect(request.META.get('HTTP_REFERER','/'))

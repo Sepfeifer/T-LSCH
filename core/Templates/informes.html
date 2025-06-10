@@ -4,6 +4,26 @@
 <link href="{% static 'css/lista.css' %}" rel="stylesheet">
 {% endblock %}
 {% block content %}
+
+  <!-- Botón hamburguesa -->
+  <div class="sidebar-toggle" onclick="toggleSidebar()">
+    &#9776;
+  </div>
+
+ <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <a href="{% url 'vista_admin' %}">Menu Principal</a>
+    <a href="{% url 'listar_usuarios' %}">Administrar usuarios</a>
+    <a href="{% url 'listar_videos' %}">Videos LSCH</a>
+    <a href="{% url 'informes' %}">Generar informe</a>
+    <a href="{% url 'notificaciones' %}">
+      <i class="fa fa-exclamation-triangle"></i> Reportes
+      {% if missing_video_reports_count %}
+        <span class="badge bg-danger">{{ missing_video_reports_count }}</span>
+      {% endif %}
+    </a>
+  </div>
+
 <div class="right_col" role="main">
   <h1>Informes por Tema</h1>
   <form method="get" style="margin-bottom:20px;">
@@ -11,7 +31,6 @@
     <label>Hasta: <input type="date" name="hasta" value="{{ hasta }}"></label>
     <button type="submit" class="btn btn-add">Filtrar</button>
     <button type="submit" name="pdf" value="1" class="btn btn-edit">PDF</button>
-    <button type="submit" name="excel" value="1" class="btn btn-edit">Excel</button>
   </form>
 
   <h2>Diario</h2>
@@ -50,4 +69,11 @@
     </tbody>
   </table>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+  }
+</script>
 {% endblock %}

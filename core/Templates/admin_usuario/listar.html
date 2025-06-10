@@ -17,10 +17,14 @@
     <a href="{% url 'vista_admin' %}">Menu Principal</a>
     <a href="{% url 'listar_usuarios' %}">Administrar usuarios</a>
     <a href="{% url 'listar_videos' %}">Videos LSCH</a>
-    <a href="{% url 'informes' %}">Generar reporte</a>
-    <a href="{% url 'logout' %}">Cerrar sesión</a>
+    <a href="{% url 'informes' %}">Generar informe</a>
+    <a href="{% url 'notificaciones' %}">
+      <i class="fa fa-exclamation-triangle"></i> Reportes
+      {% if missing_video_reports_count %}
+        <span class="badge bg-danger">{{ missing_video_reports_count }}</span>
+      {% endif %}
+    </a>
   </div>
-
 
   <div class="right_col" role="main">
     <h1>Lista de usuarios</h1>

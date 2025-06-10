@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'claveunica_auth',
     'core',     
 ]
 
@@ -73,9 +72,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.missing_videos_count',
             ],
         },
     },
@@ -92,7 +93,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'tlsch_db',
         'USER': 'tlsch_user',
-        'PASSWORD': '1qa2ws3edTlsch',  # La misma que creaste arriba
+        'PASSWORD': '1',  # La misma que creaste arriba
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -145,8 +146,3 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CLAVE_UNICA = {
-    'CLIENT_ID' : 'tu_client_id',
-    'CLIENT_SECRET': 'tu_client_secret',
-    'REDIRECT_URI': 'http://localhost:8000/claveunica/callback',
-}

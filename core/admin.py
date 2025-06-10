@@ -3,7 +3,13 @@ from .models import Usuario
 from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 
+from .models import MissingVideoReport
 
+@admin.register(MissingVideoReport)
+class MissingVideoReportAdmin(admin.ModelAdmin):
+    list_display = ('keyword', 'reported_by', 'created_at', 'resolved')
+    list_filter  = ('resolved','created_at')
+    search_fields = ('keyword','reported_by__username')
 
 class CustomUserAdmin(UserAdmin):
     # Especifica el campo de ordenación (usa 'id_rut' en lugar de 'username')
