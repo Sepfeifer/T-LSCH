@@ -18,11 +18,14 @@
         <div class="login-form-container">
             <h2>Iniciar Sesión</h2>
             
-            {% if messages %}
-              {% for message in messages %}
+           {% if messages %}
+            {% for message in messages %}
+                {# Sólo mostramos los mensajes de error, no los success #}
+                {% if message.tags == 'error' %}
                 <div class="alert alert-danger">{{ message }}</div>
-              {% endfor %}
-            {% endif %}
+                {% endif %}
+            {% endfor %}
+           {% endif %}
             
             <form method="post" class="login-form">
                 {% csrf_token %}
@@ -48,7 +51,7 @@
         <div class="footer-content">
             <img src="{% static 'img/escudo.png' %}" alt="Escudo de Chile" class="escudo">
             <p>Gobierno de Chile - Ministerio de Desarrollo Social</p>
-            <p>Todos los derechos reservados © 2023</p>
+            <p>Todos los derechos reservados © 2025</p>
         </div>
     </footer>
 </div>

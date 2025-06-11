@@ -1,9 +1,16 @@
 /* login.css */
 
+/* 1) Forzar que html y body llenen el viewport y sin márgenes */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 .login-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100vh;      /* 100% de la ventana */
     background-color: #f8f9fa;
     font-family: 'Source Sans Pro', sans-serif;
 }
@@ -33,11 +40,12 @@
     margin: 5px 0 0;
 }
 
+/* 2) Hacer que login-box llene el espacio restante y centre verticalmente */
 .login-box {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-grow: 1;
+    flex-grow: 1;           /* ocupa todo el espacio sobrante */
     padding: 30px 0;
 }
 
@@ -109,12 +117,13 @@
     text-align: center;
 }
 
+/* 3) Empujar el footer al fondo del flex-container */
 .login-footer {
     background-color: #003366;
     color: white;
     text-align: center;
     padding: 20px 0;
-    margin-top: auto;
+    margin-top: auto;       /* empuja al fondo */
 }
 
 .escudo {

@@ -1,8 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
-from core.views import login_view, logout_view  # Importa tus vistas de autenticación
+from core.views import login_view, logout_view
+from django.views.generic import RedirectView  # Importa tus vistas de autenticación
 
 urlpatterns = [
+      # 1) Raíz → login
+     path('', RedirectView.as_view(pattern_name='login', permanent=False)),
+     
     # Admin site (registra el namespace 'admin')
     path('admin/', admin.site.urls),
 
