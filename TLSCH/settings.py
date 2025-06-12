@@ -88,16 +88,19 @@ WSGI_APPLICATION = 'TLSCH.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'tlsch_db',
-        'USER': 'tlsch_user',
-        'PASSWORD': '1',  # La misma que creaste arriba
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.getenv('MYSQL_DATABASE', 'tlsch_db'),
+        'USER': os.getenv('MYSQL_USER', 'tlsch_user'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', '1'),
+        'HOST': os.getenv('MYSQL_HOST', 'db'),
+        'PORT': os.getenv('MYSQL_PORT', '3306'),
     }
 }
+
 AUTH_USER_MODEL = 'core.Usuario'
 
 

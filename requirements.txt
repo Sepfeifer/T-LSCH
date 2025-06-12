@@ -1,23 +1,24 @@
-asgiref==3.8.1
-Django==5.2
-sqlparse==0.5.3
-typing_extensions==4.13.2
-tzdata==2025.2
+ asgiref==3.8.1
+ Django==5.2
+ sqlparse==0.5.3
+ typing_extensions==4.13.2
+ tzdata==2025.2
 
-# conexión a MySQL/MariaDB
-mysqlclient>=2.1.0
+ # conexión a MySQL/MariaDB
+ mysqlclient>=2.1.0
 
-# gestión de variables de entorno
-django-environ>=0.10.1
+ # gestión de variables de entorno
+ django-environ>=0.10.1
 
-# NLP con spaCy
-spacy>=3.5.0
-es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.5.0/es_core_news_sm-3.5.0-py3-none-any.whl
+ # NLP con spaCy
+ numpy==1.23.5
+ spacy>=3.5.0
+ es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.5.0/es_core_news_sm-3.5.0-py3-none-any.whl
 
-nltk>=3.8.1
+ nltk>=3.8.1
 
-pandas
-openpyxl
-xhtml2pdf
+ pandas
+ openpyxl
+ xhtml2pdf
 
  
