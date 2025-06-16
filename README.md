@@ -1,70 +1,153 @@
-# Proyecto TLSCH
+````markdown
+<!-- Badges -->
+[![Django](https://img.shields.io/badge/Django-5.2-green)]()
+[![Python](https://img.shields.io/badge/Python-3.10-blue)]()
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)]()
 
-Este proyecto es una aplicacion web desarrollada con Django que emplea procesamiento de lenguaje natural con spaCy e integra autenticacion mediante Clave Unica.
+# Proyecto Traductor de Texto a Lengua de Señas Chilena
 
-## Requisitos
-- Python 3.10 o superior
-- virtualenv (puedes usar `python -m venv`)
+## 📖 Índice
+- [Descripción](#descripción)  
+- [Características](#características)  
+- [Tecnologías](#tecnologías)  
+- [Arquitectura](#arquitectura)  
+- [Instalación](#instalación)  
+- [Configuración](#configuración)  
+- [Uso](#uso)  
+- [Estructura de carpetas](#estructura-de-carpetas)  
+- [Contribuir](#contribuir)  
+- [Licencia](#licencia)  
 
-## Instalación
-1. Crear y activar un entorno virtual:
+---
+
+## 🔍 Descripción
+Este proyecto es una aplicación web en **Django** que traduce texto en español a **Lengua de Señas Chilena** utilizando:
+1. Un servicio de IA para resumir/extractar keywords.  
+2. Una base de datos de vídeos pregrabados asociados a cada término.  
+
+---
+
+## ✨ Características
+- **Autenticación** con Django + ClaveÚnica.  
+- **Roles de usuario**:  
+  - Administrador: gestión de usuarios y vídeos.  
+  - Funcionario: acceso a la herramienta de traducción.  
+  - Visitante: contenido público.  
+- **Extracción de keywords** con spaCy.  
+- **Búsqueda inteligente de vídeos** (incluye sinónimos WordNet).  
+- **Deletreo de nombres propios** (separando letra a letra).  
+
+---
+
+## 🛠️ Tecnologías
+- **Framework**: Django 5.2  
+- **Base de datos**: MySQL / MariaDB  
+- **Entorno**: Python 3.10+  
+- **Librerías IA/NLP**:  
+  - `spacy` + `es_core_news_sm`  
+  - `nltk` + WordNet (`omw-1.4`, `wordnet`)  
+
+---
+
+## 🏗️ Arquitectura
+- **Apps**:  
+  - `core/` → modelos, vistas, formularios, servicios.  
+  - `claveunica_auth/` → integración con ClaveÚnica.  
+- **Servicios** (`core/services/`):  
+  - `spacy_extractor.py`  
+  - `synonym_service.py`  
+- **Modelos**:  
+  - `Usuario` (extiende `AbstractUser`, añade `rol`).  
+  - `Video` (nombre, tema, url_código, fecha_creación).  
+
+---
+
+## 🚀 Instalación
+
+1. Clona el repositorio:  
    ```bash
-   python -m venv venv
-   source venv/bin/activate
+   git clone https://github.com/tu-usuario/tu-repo.git
+   cd tu-repo
+````
+
+2. Crea y activa un entorno virtual:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # Unix
+   .venv\Scripts\activate      # Windows
    ```
-2. Instalar las dependencias:
+3. Instala dependencias:
+
    ```bash
    pip install -r requirements.txt
    ```
-3. Instalar MariaDB en tu sistema.
-   En Debian/Ubuntu puedes ejecutar:
+4. Configura variables de entorno en `.env` (usa `django-environ`):
+
+   ```
+   DATABASE_URL=mysql://user:pass@host:port/dbname
+   SECRET_KEY=tu_secret_key
+   ```
+5. Aplica migraciones y crea superusuario:
+
    ```bash
-   sudo apt update && sudo apt install mariadb-server
-   sudo service mariadb start  # o mysql dependiendo de la distribución
+   python manage.py migrate
+   python manage.py createsuperuser
    ```
-   En macOS con Homebrew:
+6. Ejecuta el servidor:
+
    ```bash
-   brew install mariadb
-   brew services start mariadb
+   python manage.py runserver
    ```
-4. Crear un archivo `.env` en la raíz con las credenciales necesarias:
-   ```
-   HF_ACCESS_TOKEN=tu_token_de_hugging_face
-   CLIENT_ID=tu_client_id
-   CLIENT_SECRET=tu_client_secret
-   ```
-   Los dos últimos valores corresponden a las credenciales de Clave Única.
 
-## Configuración de la base de datos
-Tras instalar MariaDB, crea la base y el usuario que la aplicación utilizará. Entra a la consola de MariaDB:
-```bash
-mysql -u root -p
+---
+
+## ⚙️ Configuración
+
+* **spaCy**:
+
+  ```bash
+  python -m spacy download es_core_news_sm
+  ```
+* **NLTK** (WordNet):
+
+  ```python
+  import nltk
+  nltk.download('omw-1.4')
+  nltk.download('wordnet')
+  ```
+
+---
+
+## 🎮 Uso
+
+* Accede a `/admin/`
+* Crea usuarios y registra vídeos con su `tema` y `url_código`.
+* Como funcionario, ve a `/funcionario/traductor/`, ingresa un texto y obtén los vídeos traducidos en señas.
+
+---
+
+## 📂 Estructura de carpetas
+
 ```
-Y ejecuta los siguientes comandos:
-```sql
-CREATE DATABASE tlsch_db CHARACTER SET utf8mb4;
-CREATE USER 'tlsch_user'@'localhost' IDENTIFIED BY '1qa2ws3edTlsch';
-GRANT ALL PRIVILEGES ON tlsch_db.* TO 'tlsch_user'@'localhost';
-FLUSH PRIVILEGES;
+├── TLSCH/
+│   ├── core/
+│   │   ├── models.py
+│   │   ├── views.py
+│   │   ├── forms.py
+│   │   └── services/
+│   │       ├── spacy_extractor.py
+│   │       └── synonym_service.py
+│   ├── claveunica_auth/
+│   ├── templates/
+│   ├── static/
+│   └── settings.py
+├── requirements.txt
+├── .env
+└── manage.py
 ```
 
-En `TLSCH/settings.py` se definen las credenciales por defecto para MariaDB (utilizando el backend de Django para MySQL):
-```
-'NAME': 'tlsch_db'
-'USER': 'tlsch_user'
-'PASSWORD': '1qa2ws3edTlsch'
-'HOST': 'localhost'
-'PORT': '3306'
-```
-Asegúrate de crear la base y el usuario en tu servidor MySQL.
-Luego aplica las migraciones ejecutando:
-```bash
-python manage.py migrate
-```
+---
+## 📄 Licencia
 
-## Servidor de desarrollo
-Con el entorno virtual activo y todo instalado, inicia el servidor con:
-```bash
-python manage.py runserver
-```
-Visita `http://localhost:8000` para comprobar que la aplicación funciona.
+Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
