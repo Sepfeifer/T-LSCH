@@ -20,7 +20,7 @@ _MULTI_WORDS = [
     "Bloquear Carnet",
     "Entrar a internet",
     # nuevas unidas por "_"
-    "Poner_Huella",
+    "Poner Huella",
     "Entregar documento",
     "Dos Semanas",
     "Documento de defunción",
